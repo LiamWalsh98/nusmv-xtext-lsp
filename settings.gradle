@@ -1,0 +1,3 @@
+include 'org.xtext.nusmv.language'
+include 'org.xtext.nusmv.language.ide'
+include 'org.xtext.nusmv.language.web'

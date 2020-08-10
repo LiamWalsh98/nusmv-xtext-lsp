@@ -1,0 +1,285 @@
+grammar org.xtext.nusmv.language.NuSMV 
+
+generate nuSMV "http://www.xtext.org/nusmv/language/NuSMV"
+
+// do not use the common terminal since comments and ids are different
+import "http://www.eclipse.org/emf/2002/Ecore" as ecore
+
+NuSmvModel hidden(WS, SL_COMMENT):
+	(modules+=Module)*;
+
+Module:
+	"MODULE" name=ID ("(" (params+=FormalParameter) ("," params+=FormalParameter)* ")")?
+	//"MODULE" ID=ID ("(" (params+=FormalParameter) ("," params+=FormalParameter)* ")")?
+	//"MODULE" ID=ID ("(" (params+=ID) ("," params+=ID)* ")")?
+	(moduleElement+=ModuleElement)*;
+
+	//un ModuleElement e' una sezione del modulo
+ModuleElement hidden(WS, SL_COMMENT):
+	VariableDeclaration | IVariableDeclaration | FrozenVariableDeclaration |
+	DefineDeclaration | ConstantsDeclaration | AssignConstraint | TransConstraint |
+	InitConstraint | InvarConstraint | FairnessConstraint | CtlSpecification | PslSpecification |
+	InvarSpecification | LtlSpecification | IsaDeclaration | ComputeSpecification;
+
+//Also the single keyword "VAR" is accepted (without anything else)
+VariableDeclaration hidden(WS, SL_COMMENT):
+//"VAR" (vars+=VarBody ";")+
+	"VAR" {VariableDeclaration} (vars+=VarBody)*;
+
+IVariableDeclaration hidden(WS, SL_COMMENT):
+	"IVAR" (vars+=VarBody)+;
+
+FrozenVariableDeclaration hidden(WS, SL_COMMENT):
+	"FROZENVAR" (vars+=VarBody)+;
+
+VarBody hidden(WS, SL_COMMENT):
+	name=ID ":" type=Type semicolon?=";";
+
+DefineDeclaration hidden(WS, SL_COMMENT):
+	define="DEFINE" (defineBodies+=DefineBody)*;
+
+DefineBody hidden(WS, SL_COMMENT):
+	var=ID ":=" assignment=SimpleExpression semicolon?=";";
+
+ConstantsDeclaration hidden(WS, SL_COMMENT):
+	"CONSTANTS" constants+=ID ("," constants+=ID)* semicolon?=";";
+
+	// 2.3.8 ASSIGN Constraint
+
+AssignConstraint returns AssignConstraintElement hidden(WS, SL_COMMENT):
+	assign="ASSIGN" (bodies+=AssignBody)*;
+
+AssignBody hidden(WS, SL_COMMENT):
+	VarBodyAssign | InitBody | NextBody;
+
+VarBodyAssign returns VarBodyAssign hidden(WS, SL_COMMENT):
+	var=VariableID ":=" assignment=SimpleExpression semicolon?=";";
+
+InitBody hidden(WS, SL_COMMENT):
+	"init" "(" var=VariableID ")" ":=" initial=SimpleExpression semicolon?=";";
+
+	// Non so se la seguente potrebbe essere una via di risoluzione, ma dopo averla provata
+// non mi sembra sensata e mi da' errore nel generare il linguaggio
+//InitBody returns AssignBodyInit hidden(WS, SL_COMMENT):
+//	"init" "(" var=[VarBody|ID] ")" ":=" initial=(SimpleExpression|[VarBody]) semicolon?=";";
+
+// next of a (qualified) variable
+// TODO refactor qualified variable
+NextBody returns NextBody hidden(WS, SL_COMMENT):
+	"next" "(" var=VariableID ")" ":=" next=NextExpression semicolon?=";";
+
+TransConstraint hidden(WS, SL_COMMENT):
+	"TRANS" transExpression=SimpleExpression semicolon?=";"?;
+
+InitConstraint hidden(WS, SL_COMMENT):
+	"INIT" initExpression=SimpleExpression semicolon?=";"?;
+
+InvarConstraint hidden(WS, SL_COMMENT):
+	"INVAR" invarExpression=SimpleExpression semicolon?=";"?;
+
+FairnessConstraint hidden(WS, SL_COMMENT):
+	FairnessExpression | JusticeExpression | CompassionExpression;
+
+FairnessExpression hidden(WS, SL_COMMENT):
+	"FAIRNESS" fairnessExpr=SimpleExpression semicolon?=";"?;
+
+JusticeExpression hidden(WS, SL_COMMENT):
+	"JUSTICE" justiceExpr=SimpleExpression semicolon?=";"?;
+
+CompassionExpression hidden(WS, SL_COMMENT):
+	"COMPASSION (" firstExpr=SimpleExpression "," secondExpr=SimpleExpression ")" semicolon?=";"?;
+
+//It doesn't work. It doesn't get all the CTL properties. Why?
+//Isn't it equivalent to the previous one?
+CtlSpecification hidden(WS, SL_COMMENT):
+	specKeyWord=("CTLSPEC" | "SPEC") (nameKeyWord?="NAME" name=ID ":=")? ctlExpression=CTLExpression semicolon?=";"?;
+
+PslSpecification hidden(WS, SL_COMMENT):
+	"PSLSPEC" (nameKeyWord?="NAME" name=ID ":=")? pslExpression=PSLExpression semicolon?=";"?;
+
+InvarSpecification hidden(WS, SL_COMMENT):
+	"INVARSPEC" invarSpec=NextExpression ";" | "INVARSPEC" name=ID ":=" invarSpec=NextExpression semicolon?=";"?;
+
+IsaDeclaration hidden(WS, SL_COMMENT):
+	"ISA" id=ID;
+
+LtlSpecification hidden(WS, SL_COMMENT):
+	"LTLSPEC" (nameId?="NAME" name=ID ":=")? ltlExpression=LTLExpression semicolon?=";"?;
+
+Type hidden(WS, SL_COMMENT):
+	SimpleType | ModuleType;
+
+SimpleType hidden(WS, SL_COMMENT):
+	{BooleanType} "boolean" | {WordType} ("word" "[" wordNumber=NUMBER "]") | {UnsignedWordType} ("unsigned" "word" "["
+	uWordNumber=NUMBER "]") | {SignedWordType} ("signed word" "[" signedNumber=NUMBER "]") | {EnumType} "{" val+=Val (","
+	val+=Val)* "}" | {IntervalType} (low=(NUMBER|VariableID) ".." high=(NUMBER|VariableID)) | {ArrayType} "array" lowerBound=(NUMBER|VariableID) ".."
+	upperBound=(NUMBER|VariableID) "of" type=SimpleType;
+
+ModuleType hidden(WS, SL_COMMENT):
+//{AsyncrProcessType} ("process" moduleName=VariableID ("(" params+=SimpleExpression ("," params+=SimpleExpression)* ")")?)
+	{AsyncrProcessType} ("process" module=[Module|ID] ("(" (params+=SimpleExpression | par=[VarBody|ID])
+	("," params+=SimpleExpression)* ")")?)
+	//| {SyncrProcessType} (moduleName=VariableID ("(" params+=SimpleExpression ("," params+=SimpleExpression)* ")")?);
+	| {SyncrProcessType} (module=[Module|ID] ("(" (params+=SimpleExpression | par=[VarBody|ID]) (","
+	params+=SimpleExpression)* ")")?);
+
+	// value element of enumerative or numeric value or boolean constant
+Val hidden(WS, SL_COMMENT):
+	{Val} (name=ID | num=NUMBER | "TRUE" | "FALSE");
+
+NextExpression hidden(WS, SL_COMMENT):
+	simpleExpression=SimpleExpression;
+
+SimpleExpression:
+//ImpliesExpression;
+	LTLbinExpression;
+
+LTLbinExpression returns SimpleExpression:
+	=> ImpliesExpression ({BinaryExpression.left=current} operator=LTLbinoperators right=ImpliesExpression)*;
+
+ImpliesExpression returns SimpleExpression:
+	=> IffExpression ({BinaryExpression.left=current} operator=impliesoperator right=IffExpression)*;
+
+IffExpression returns SimpleExpression:
+//left=IfThenElseExpression ({BinaryExpression.left=current} operator="<->" right = IfThenElseExpression)*;
+	=> OrExpression ({BinaryExpression.left=current} operator=iffoperator right=OrExpression)*;
+
+	//IfThenElseExpression returns TernaryExpression:
+//	cond=OrExpression "?" then=OrExpression ":" else=OrExpression;
+//fine PA
+OrExpression returns SimpleExpression:
+	=> AndExpression ({BinaryExpression.left=current} operator=oroperators right=AndExpression)*;
+	//left=AndExpression (operator=('|'|'xor'|'xnor') right = AndExpression)?;
+AndExpression returns SimpleExpression:
+	=> ComparisonExpression ({BinaryExpression.left=current} operator=andoperator right=ComparisonExpression)*;
+	//left=ComparisonExpression (operator='&' right=ComparisonExpression)?;
+ComparisonExpression returns SimpleExpression:
+//first=ATOM (operator=('='|'!='|'<'|'>'|'<='|'>=') second=ATOM)?;
+//left=ATOM ({BinaryExpression.left = current} operator='&' right=BasicExpression)*;
+	=> InExpression ({BinaryExpression.left=current} operator=comparisonoperators right=InExpression)*;
+
+	//ComparisonExpression returns BinaryExpression:
+//	InExpression ({BinaryExpression.left = current} operator=('='|'!='|'<'|'>'|'<='|'>=') right=NotExpression)*;
+InExpression returns SimpleExpression:
+	=> UnionExpression ({BinaryExpression.left=current} op="in" right=UnionExpression)*;
+
+UnionExpression returns SimpleExpression:
+	=> RightShift ({BinaryExpression.left=current} op="union" right=RightShift)*;
+
+RightShift returns SimpleExpression:
+	=> LeftShift ({BinaryExpression.left=current} op=">>" right=LeftShift)*;
+
+LeftShift returns SimpleExpression:
+	=> Minus ({BinaryExpression.left=current} op="<<" right=Minus)*;
+
+Minus returns SimpleExpression:
+	=> Plus ({BinaryExpression.left=current} op="-" right=Plus)*;
+
+Plus returns SimpleExpression:
+	=> Mult ({BinaryExpression.left=current} op="+" right=Mult)*;
+
+Mult returns SimpleExpression:
+	=> Mod ({BinaryExpression.left=current} op="*" right=Mod)*;
+
+Mod returns SimpleExpression:
+	=> WordConcatenation ({BinaryExpression.left=current} op="mod" right=WordConcatenation)*;
+
+WordConcatenation returns SimpleExpression:
+//left=LTLbinExpression ({BinaryExpression.left = current} operator="::" right=LTLbinExpression)*;
+	=> Div ({BinaryExpression.left=current} op="::" right=Div)*;
+
+Div returns SimpleExpression:
+	=> NotOrTerminalSimpleExpression ({BinaryExpression.left=current} op='/' right=NotOrTerminalSimpleExpression)*;
+	//TerminalSimpleExpression ({Div.left=current} op='/' right=SimpleExpression)*;
+//first=TerminalSimpleExpression ( operator="/" second=SimpleExpression)?;
+NotOrTerminalSimpleExpression returns SimpleExpression:
+	{Not} '!' exp=TerminalSimpleExpression | TerminalSimpleExpression;
+
+TerminalSimpleExpression returns SimpleExpression hidden(WS, SL_COMMENT):
+	{ParsExpression} isNext="next"? "(" simpleExpression=SimpleExpression ")"
+	| {UnaryExpression} (operator=('-' | '+' | 'EG' | 'EX' | 'EF' | 'AG' | 'AX' | 'AF' | 'X' | 'G' | 'F' | 'Y' | 'Z' | 'H'
+	| 'O') simpleExpression=SimpleExpression) | CaseSimpleExpression
+	| {ValueExpression} value=VariableID ('[' array+=NUMBER ']')*
+	| {Var} value=[VarBody|ID] ("." dotted=TerminalSimpleExpression | ('[' array+=NUMBER ']')*)?
+	| {SetElementExpression} val=[Val|ID] | {SetValueParameter} valparam=[FormalParameter|ID] |
+	{ValueExpression} value=ID | {ValueExpression} value=NUMBER | {ValueExpression} value="TRUE" |
+	{ValueExpression} value="FALSE" | {ValueExpression} value="self"
+	| {SetExpression} "{" setElement+=SimpleExpression ("," setElement+=SimpleExpression)* "}"
+	| {WordExpression} value=WORD | {IntervalExpression} lowerBound=(NUMBER) ".." upperBound=(NUMBER)
+	| {UntilCTLexpression} ea=("E" | "A") "[" arg=LTLbinExpression "]" | {UnaryFunctionExpression} function=("word1" |
+	"bool") "(" arg=SimpleExpression ")"|{ToInt}"toint""("arg=SimpleExpression ")";
+
+FormalParameter:
+	name=ID ((".")? ID)*;
+
+CaseSimpleExpression hidden(WS, SL_COMMENT):
+	"case" (branches+=CaseSimpleAssignementExpression)+ "esac";
+
+CaseSimpleAssignementExpression hidden(WS, SL_COMMENT):
+	case=SimpleExpression ":" assignment=SimpleExpression ";";
+
+CTLExpression hidden(WS, SL_COMMENT):
+	simpleExpression=SimpleExpression;
+
+PSLExpression hidden(WS, SL_COMMENT):
+	simpleExpression=SimpleExpression;
+
+LTLExpression hidden(WS, SL_COMMENT):
+	simpleExpression=SimpleExpression;
+
+RangeExpression:
+	lower=(NUMBER ) ".." upper=(NUMBER);
+
+RTCTLExpression hidden(WS, SL_COMMENT):
+	{SingleRTCTLExpression} ctlExpression=(CTLExpression | FormalParameter) | {UnaryRTCTLExpression} unary=("EBF" | "ABF"
+	| "EBG" | "ABG") range=RangeExpression rctl=RTCTLExpression;
+
+ComputeSpecification:
+	"COMPUTE" minMax=("MIN" | "MAX") "[" first=(RTCTLExpression) "," second=(RTCTLExpression) "]" semicolon?=(";")?;
+
+VariableID hidden(WS, SL_COMMENT):
+	TerminalVariableID (("." TerminalVariableID) | ("[" (NUMBER | TerminalVariableID) "]") | ("[" NUMBER ":" NUMBER "]"))*;
+
+TerminalVariableID hidden(WS, SL_COMMENT):
+	ID;
+
+enum comparisonoperators returns operators:
+	equal='=' | dis='!=' | l='<' | g='>' | le='<=' | ge='>=';
+
+enum oroperators returns operators:
+	or='|' | xor='xor' | xnor='xnor';
+
+enum impliesoperator returns operators:
+	implies='->';
+
+enum iffoperator returns operators:
+	iff='<->';
+
+enum andoperator returns operators:
+	and='&';
+
+enum LTLbinoperators returns operators:
+	u="U" | v="V" | s="S" | t="T";
+
+	//NUMBER hidden(WS, SL_COMMENT): INT;
+NUMBER:
+	'-'? INT;
+
+terminal SL_COMMENT:
+	'--' !('\n' | '\r')* ('\r'? '\n')?;
+
+terminal WORD:
+	'0' ('u' | 's')? ('b' | 'B' | 'o' | 'O' | '_' | 'd' | 'D' | 'h' | 'H') INT? '_' ('a'..'f' | 'A.' . 'F' | INT)*;
+
+	// variable ids can contain -
+//terminal ID: '^'?('a'..'z'|'A'..'Z'|'_') ('a'..'z'|'A'..'Z'|'_'|'0'..'9' | '-')*;
+terminal ID:
+// the . can be inside the ID 
+// it can be to identify the module or part of the id (in case of flatten for example)	
+	('A'..'Z' | 'a'..'z' | '_') ('A'..'Z' | 'a'..'z' | '_' | INT | '$' | '#' | '-' | ".")*;
+
+terminal INT returns ecore::EInt:
+	('0'..'9')+;
+
+terminal WS:
+	(' ' | '\t' | '\r' | '\n')+;
