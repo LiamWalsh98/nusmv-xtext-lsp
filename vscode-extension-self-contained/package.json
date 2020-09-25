@@ -1,18 +1,11 @@
 {
-    "name": "xtext-vscode-example",
-    "displayName": "Xtext VS Code example",
-    "description": "A simple DSL example for VS Code",
-    "version": "0.0.28",
-    "publisher": "itemis",
-    "icon": "images/itemis.png",
+    "name": "vscode-nusmv",
+    "displayName": "NuSMV VSCode Extension",
+    "description": "NuSMV extension for VSCode",
+    "version": "0.0.1",
+
     "license": "EPL-1.0",
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/itemis/xtext-languageserver-example.git"
-    },
-    "bugs": {
-        "url": "https://github.com/itemis/xtext-languageserver-example/issues"
-    },
+  
     "engines": {
         "vscode": "^1.33.0"
     },
@@ -20,37 +13,37 @@
         "Programming Languages"
     ],
     "activationEvents": [
-        "onLanguage:mydsl"
+        "onLanguage:nusmv"
     ],
     "main": "out/extension",
     "contributes": {
         "languages": [
             {
-                "id": "mydsl",
+                "id": "nusmv",
                 "aliases": [
-                    "mydsl"
+                    "NuSMV"
                 ],
                 "extensions": [
-                    ".mydsl"
+                    ".smv"
                 ],
-                "configuration": "./mydsl.configuration.json"
+                "configuration": "./nusmv.configuration.json"
             }
         ],
         "grammars": [
             {
-                "language": "mydsl",
-                "scopeName": "text.mydsl",
-                "path": "./syntaxes/mydsl.tmLanguage.json"
+                "language": "nusmv",
+                "scopeName": "text.nusmv",
+                "path": "./syntaxes/nusmv.tmLanguage.json"
             }
         ],
         "commands": [
             {
-                "command": "mydsl.a.proxy",
-                "title": "MyDsl Command A"
+                "command": "smv.a.proxy",
+                "title": "SMV Test Command A"
             },
             {
-                "command": "mydsl.b",
-                "title": "MyDsl Command B"
+                "command": "smv.b",
+                "title": "SMV Test Command B"
             }
         ]
     },
