@@ -8,7 +8,7 @@ import { commands, window, workspace, ExtensionContext, Uri } from 'vscode';
 import { LanguageClient, LanguageClientOptions, ServerOptions } from 'vscode-languageclient';
 
 export function activate(context: ExtensionContext) {
-    // The server is a locally installed in src/mydsl
+    // The server is a locally installed in src/smv
     let launcher = os.platform() === 'win32' ? 'nusmv-standalone.bat' : 'nusmv-standalone';
     let script = context.asAbsolutePath(path.join('src', 'smv', 'bin', launcher));
 
@@ -34,7 +34,7 @@ export function activate(context: ExtensionContext) {
         }
 
         if (activeEditor.document.uri instanceof Uri) {
-            commands.executeCommand("mydsl.a", activeEditor.document.uri.toString());
+            commands.executeCommand("smv.a", activeEditor.document.uri.toString());
         }
     })
     context.subscriptions.push(disposable2);
