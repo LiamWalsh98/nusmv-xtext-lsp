@@ -39,3 +39,32 @@ local.properties
 
 # Locally stored "Eclipse launch configurations"
 *.launch
+
+
+# Node
+node_modules
+
+# Xtext / Xtend
+model
+src-gen
+xtend-gen
+.antlr*.jar
+
+# Eclipse
+.classpath
+.project
+.settings/
+.metadata/
+bin/
+
+# IntelliJ
+*.iml
+*.ipr
+*.iws
+.idea/
+out/
+
+# Gradle
+.gradle/
+build/
+!gradle-wrapper.jar
