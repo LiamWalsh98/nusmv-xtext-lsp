@@ -28,7 +28,7 @@ task startCode(type:Exec, dependsOn: installExtension) {
     } else {
         commandLine 'code'
     }
-    args "$rootProject.projectDir/demo/", '--new-window'
+    args "$rootProject.projectDir/demo.smv/", '--new-window'
 }
 
 task publish(dependsOn: vscodeExtension, type: NodeTask) {

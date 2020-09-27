@@ -3,9 +3,8 @@
     "displayName": "NuSMV VSCode Extension",
     "description": "NuSMV extension for VSCode",
     "version": "0.0.1",
-
+    "publisher": "liam",
     "license": "EPL-1.0",
-  
     "engines": {
         "vscode": "^1.33.0"
     },
