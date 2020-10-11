@@ -58,6 +58,6 @@
     "fileTypes": [
         "smv"
     ],
-    "scopeName": "source.nusmv",
+    "scopeName": "text.nusmv",
     "name": "NuSMV"
 }
