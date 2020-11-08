@@ -1,10 +1,13 @@
-# NuSMV VSCode Plugin (Alpha 0.0.1)
+# NuSMV Editing Support
 
-This plugin provides syntax highlighting as well as semantic support for `.smv` filetypes.
+## Release Notes 
+### 0.0.1 Alpha
+Initial release of NuSMV VSCode Plugin
+- Support for `.smv` filetypes
+- Syntax highlight
+- Semantic Support (Updated on save action)
 
-Semantic checks will update on save. 
-
-## Next release:
+### Next release:
 - Run configurations
 - Semantic check trigger on text change rather than save.
 
