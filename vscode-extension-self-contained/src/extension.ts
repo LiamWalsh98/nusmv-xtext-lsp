@@ -27,18 +27,6 @@ export function activate(context: ExtensionContext) {
     // Create the language client and start the client.
     let lc = new LanguageClient('NuSMV Server', serverOptions, clientOptions);
     
-    var disposable2 =commands.registerCommand("smv.a.proxy", async () => {
-        let activeEditor = window.activeTextEditor;
-        if (!activeEditor || !activeEditor.document || activeEditor.document.languageId !== 'smv') {
-            return;
-        }
-
-        if (activeEditor.document.uri instanceof Uri) {
-            commands.executeCommand("smv.a", activeEditor.document.uri.toString());
-        }
-    })
-    context.subscriptions.push(disposable2);
-    
     // enable tracing (.Off, .Messages, Verbose)
     lc.trace = Trace.Verbose;
     let disposable = lc.start();
@@ -46,6 +34,25 @@ export function activate(context: ExtensionContext) {
     // Push the disposable to the context's subscriptions so that the 
     // client can be deactivated on extension deactivation
     context.subscriptions.push(disposable);
+
+
+    // Launch Shell command
+    context.subscriptions.push(commands.registerCommand("nusmv.createTerminal", () => {
+        const terminal = window.createTerminal("NuSMV Shell");
+        terminal.sendText
+        terminal.sendText(os.platform() === "win32" ? "nusmv.exe" : "nusmv" + " -int");
+        terminal.show();
+    }));
+
+    // Run file command
+    context.subscriptions.push(commands.registerCommand("nusmv.runCurrent", () => {
+        // TODO: Make sure to overwrite old terminal if new one spawns
+        
+        const terminal = window.createTerminal("NuSMV Batch");
+        terminal.sendText(os.platform() === "win32" ? "nusmv.exe" : "nusmv" + ` ${window.activeTextEditor.document.fileName}`);
+        terminal.show();
+    }));
+
 }
 
 function createDebugEnv() {

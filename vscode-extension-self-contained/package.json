@@ -12,7 +12,9 @@
         "Programming Languages"
     ],
     "activationEvents": [
-        "onLanguage:nusmv"
+        "onLanguage:nusmv",
+        "onCommand:nusmv.createTerminal",
+        "onCommand:nusmv.runCurrent"
     ],
     "main": "out/extension",
     "contributes": {
@@ -35,14 +37,34 @@
                 "path": "./syntaxes/nusmv.tmLanguage.json"
             }
         ],
+        "menus": {
+            "commandPalette": [
+                {
+                    "command": "nusmv.runCurrent",
+                    "when": "editorLangId == nusmv"
+                }
+            ]
+        },
         "commands": [
             {
-                "command": "smv.a.proxy",
-                "title": "SMV Test Command A"
+                "command": "nusmv.createTerminal",
+                "title": "NuSMV: New Interactive Shell"
             },
             {
-                "command": "smv.b",
-                "title": "SMV Test Command B"
+                "command": "nusmv.runCurrent",
+                "title": "NuSMV: Run Current Model"
+            }
+        ],
+        "keybindings": [
+            {
+                "command": "nusmv.createTerminal",
+                "key": "ctrl+i",
+                "mac": "cmd+i"
+            },
+            {
+                "command": "nusmv.runCurrent",
+                "key": "ctrl+r",
+                "mac": "cmd+r"
             }
         ]
     },
