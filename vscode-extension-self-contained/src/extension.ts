@@ -40,7 +40,7 @@ export function activate(context: ExtensionContext) {
     context.subscriptions.push(commands.registerCommand("nusmv.createTerminal", () => {
         const terminal = window.createTerminal("NuSMV Shell");
         terminal.sendText
-        terminal.sendText(os.platform() === "win32" ? "nusmv.exe" : "nusmv" + " -int");
+        terminal.sendText(os.platform() === "win32" ? "nusmv.exe -int" : "nusmv -int");
         terminal.show();
     }));
 
@@ -49,7 +49,7 @@ export function activate(context: ExtensionContext) {
         // TODO: Make sure to overwrite old terminal if new one spawns
         
         const terminal = window.createTerminal("NuSMV Batch");
-        terminal.sendText(os.platform() === "win32" ? "nusmv.exe" : "nusmv" + ` ${window.activeTextEditor.document.fileName}`);
+        terminal.sendText(os.platform() === "win32" ? `nusmv.exe ${window.activeTextEditor.document.fileName}` : `nusmv ${window.activeTextEditor.document.fileName}`);
         terminal.show();
     }));
 
