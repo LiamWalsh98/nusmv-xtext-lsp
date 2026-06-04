@@ -1,0 +1,10 @@
+src/**
+tsconfig.json
+langium-config.json
+node_modules/.cache/**
+**/*.java
+**/*.xtend
+**/*.xtext
+**/*.mwe2
+**/xtext-gen/**
+**/xtend-gen/**

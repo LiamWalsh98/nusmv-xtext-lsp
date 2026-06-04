@@ -1,0 +1,19 @@
+{
+  "projectName": "NuSMV",
+  "languages": [
+    {
+      "id": "nusmv",
+      "grammar": "src/language/nusmv.langium",
+      "fileExtensions": [
+        ".smv"
+      ],
+      "textMate": {
+        "out": "syntaxes/nusmv.tmLanguage.json"
+      },
+      "monarch": {
+        "out": "syntaxes/nusmv.monarch.ts"
+      }
+    }
+  ],
+  "out": "src/language/generated"
+}
