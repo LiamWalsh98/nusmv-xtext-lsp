@@ -163,7 +163,11 @@ OrExpression returns Expression:
     AndExpression ({infer BinaryExpression.left=current} operator=('|' | 'xor' | 'xnor') right=AndExpression)*;
 
 AndExpression returns Expression:
-    ComparisonExpression ({infer BinaryExpression.left=current} operator='&' right=ComparisonExpression)*;
+    TemporalExpression ({infer BinaryExpression.left=current} operator='&' right=TemporalExpression)*;
+
+TemporalExpression returns Expression:
+    {infer UnaryExpression} operator=('EG' | 'EX' | 'EF' | 'AG' | 'AX' | 'AF' | 'X' | 'G' | 'F' | 'Y' | 'Z' | 'H' | 'O') operand=TemporalExpression
+    | ComparisonExpression;
 
 ComparisonExpression returns Expression:
     InExpression ({infer BinaryExpression.left=current} operator=('=' | '!=' | '<' | '>' | '<=' | '>=') right=InExpression)*;
@@ -184,7 +188,7 @@ MultiplicativeExpression returns Expression:
     PrefixExpression ({infer BinaryExpression.left=current} operator=('*' | '/' | 'mod' | '::') right=PrefixExpression)*;
 
 PrefixExpression returns Expression:
-    {infer UnaryExpression} operator=('!' | '-' | '+' | 'EG' | 'EX' | 'EF' | 'AG' | 'AX' | 'AF' | 'X' | 'G' | 'F' | 'Y' | 'Z' | 'H' | 'O') operand=PrefixExpression
+    {infer UnaryExpression} operator=('!' | '-' | '+') operand=PrefixExpression
     | PrimaryExpression;
 
 PrimaryExpression:
