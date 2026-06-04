@@ -77,7 +77,7 @@
         "vscode-languageclient": "^5.2.1"
     },
     "scripts": {
-        "prepublish": "node ./node_modules/vscode/bin/install && tsc -p ./src",
+        "prepublish": "npm run compile",
         "compile": "tsc -p ./src",
         "watch": "tsc -w -p ./src",
         "update-vscode": "node ./node_modules/vscode/bin/install"

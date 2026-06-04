@@ -1,0 +1,32 @@
+{
+  "name": "nusmv",
+  "scopeName": "source.nusmv",
+  "fileTypes": [
+    ".smv"
+  ],
+  "patterns": [
+    {
+      "include": "#comments"
+    },
+    {
+      "name": "keyword.control.nusmv",
+      "match": "\\b(A|ABF|ABG|AF|AG|ASSIGN|AX|COMPASSION|COMPUTE|CONSTANTS|CTLSPEC|DEFINE|E|EBF|EBG|EF|EG|EX|F|FAIRNESS|FALSE|FROZENVAR|G|H|INIT|INVAR|INVARSPEC|ISA|IVAR|JUSTICE|LTLSPEC|MAX|MIN|MODULE|NAME|O|PSLSPEC|S|SPEC|T|TRANS|TRUE|U|V|VAR|X|Y|Z|array|bool|boolean|case|esac|in|init|mod|next|of|process|self|signed|toint|union|unsigned|word|word1|xnor|xor)\\b"
+    }
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        {
+          "begin": "--",
+          "beginCaptures": {
+            "1": {
+              "name": "punctuation.whitespace.comment.leading.nusmv"
+            }
+          },
+          "end": "(?=$)",
+          "name": "comment.line.nusmv"
+        }
+      ]
+    }
+  }
+}

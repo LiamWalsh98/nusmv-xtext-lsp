@@ -1,0 +1,46 @@
+import { AstUtils } from 'langium';
+import {
+    ConstantSymbol,
+    DefineBody,
+    EnumType,
+    EnumValue,
+    FormalParameter,
+    isModule,
+    Module,
+    VarBody
+} from './generated/ast.js';
+
+export type NuSMVSymbol = Module | VarBody | FormalParameter | DefineBody | ConstantSymbol | EnumValue;
+
+export function findContainingModule(node: object): Module | undefined {
+    return AstUtils.getContainerOfType(node as never, isModule);
+}
+
+export function collectModuleSymbols(module: Module): NuSMVSymbol[] {
+    const symbols: NuSMVSymbol[] = [module, ...module.params];
+    for (const element of module.elements) {
+        if ('vars' in element && Array.isArray(element.vars)) {
+            symbols.push(...element.vars);
+            for (const variable of element.vars) {
+                symbols.push(...collectEnumValues(variable));
+            }
+        }
+        if ('defineBodies' in element && Array.isArray(element.defineBodies)) {
+            symbols.push(...element.defineBodies);
+        }
+        if ('constants' in element && Array.isArray(element.constants)) {
+            symbols.push(...element.constants);
+        }
+    }
+    return symbols;
+}
+
+export function collectSymbolNames(module: Module): string[] {
+    return [...new Set(collectModuleSymbols(module).map(symbol => symbol.name))];
+}
+
+function collectEnumValues(variable: VarBody): EnumValue[] {
+    return variable.type.$type === 'EnumType'
+        ? (variable.type as EnumType).values
+        : [];
+}

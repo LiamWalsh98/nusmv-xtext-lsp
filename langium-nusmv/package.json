@@ -1,0 +1,89 @@
+{
+  "name": "vscode-nusmv",
+  "displayName": "NuSMV VSCode Extension",
+  "description": "NuSMV extension for VSCode powered by Langium",
+  "version": "0.1.0",
+  "publisher": "LiamWalsh98",
+  "license": "EPL-1.0",
+  "type": "module",
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "activationEvents": [
+    "onLanguage:nusmv",
+    "onCommand:nusmv.createTerminal",
+    "onCommand:nusmv.runCurrent"
+  ],
+  "main": "./out/extension/main.js",
+  "contributes": {
+    "languages": [
+      {
+        "id": "nusmv",
+        "aliases": [
+          "NuSMV"
+        ],
+        "extensions": [
+          ".smv"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "nusmv",
+        "scopeName": "source.nusmv",
+        "path": "./syntaxes/nusmv.tmLanguage.json"
+      }
+    ],
+    "menus": {
+      "commandPalette": [
+        {
+          "command": "nusmv.runCurrent",
+          "when": "editorLangId == nusmv"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "nusmv.createTerminal",
+        "title": "NuSMV: New Interactive Shell"
+      },
+      {
+        "command": "nusmv.runCurrent",
+        "title": "NuSMV: Run Current Model"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "nusmv.createTerminal",
+        "key": "ctrl+i",
+        "mac": "cmd+i"
+      },
+      {
+        "command": "nusmv.runCurrent",
+        "key": "ctrl+r",
+        "mac": "cmd+r"
+      }
+    ]
+  },
+  "scripts": {
+    "langium:generate": "langium generate",
+    "build": "npm run langium:generate && tsc -p tsconfig.json",
+    "watch": "tsc -w -p tsconfig.json",
+    "vscode:prepublish": "npm run build"
+  },
+  "dependencies": {
+    "langium": "^4.2.0",
+    "vscode-languageclient": "^9.0.1",
+    "vscode-languageserver": "^9.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "@types/vscode": "^1.90.0",
+    "langium-cli": "^4.2.0",
+    "typescript": "^5.6.3"
+  }
+}

@@ -4,7 +4,7 @@ import * as path from 'path';
 import * as os from 'os';
 
 import {Trace} from 'vscode-jsonrpc';
-import { commands, window, workspace, ExtensionContext, Uri } from 'vscode';
+import { commands, window, workspace, ExtensionContext } from 'vscode';
 import { LanguageClient, LanguageClientOptions, ServerOptions } from 'vscode-languageclient';
 
 export function activate(context: ExtensionContext) {
@@ -18,7 +18,9 @@ export function activate(context: ExtensionContext) {
     };
     
     let clientOptions: LanguageClientOptions = {
-        documentSelector: ['smv'],
+        // Match the contributed language id so VS Code forwards open/change events
+        // to the language server instead of only triggering validation on save.
+        documentSelector: ['nusmv'],
         synchronize: {
             fileEvents: workspace.createFileSystemWatcher('**/*.*')
         }

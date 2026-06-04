@@ -1,0 +1,4 @@
+src/**
+tsconfig.json
+langium-config.json
+node_modules/.cache/**
