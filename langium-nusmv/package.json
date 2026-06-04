@@ -19,6 +19,22 @@
   ],
   "main": "./out/extension/main.js",
   "contributes": {
+    "configuration": {
+      "title": "NuSMV",
+      "properties": {
+        "nusmv.disableSemanticChecksOnLargeFiles": {
+          "type": "boolean",
+          "default": true,
+          "description": "Disable NuSMV language-server semantic checks for files above the configured line threshold."
+        },
+        "nusmv.semanticChecksMaxLines": {
+          "type": "number",
+          "default": 10000,
+          "minimum": 1,
+          "description": "Maximum line count for NuSMV language-server semantic checks when large-file semantic checks are disabled."
+        }
+      }
+    },
     "languages": [
       {
         "id": "nusmv",

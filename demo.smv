@@ -7,8 +7,8 @@ VAR
 ASSIGN
   init(state) := ready;
   next(state) := case
-                   state = ready & request = 1 : busy;
-                   1                           : {ready, busy};
+                   state = ready & request = TRUE : busy;
+                   TRUE                           : {ready, busy};
                  esac;
 
 SPEC
