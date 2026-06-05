@@ -117,6 +117,11 @@ export function resolveSymbol(path: VariablePath): NuSMVSymbol | undefined {
     return resolvePathState(path, new Set()).symbol;
 }
 
+export function resolvePathTargetModule(path: VariablePath, segmentCount: number = path.segments.length): Module | undefined {
+    const state = resolvePathState(path, new Set(), segmentCount);
+    return state.astType ? moduleFromType(state.astType) : undefined;
+}
+
 export function inferVariablePathType(path: VariablePath, seenDefines: Set<string> = new Set()): SemanticType {
     return resolvePathState(path, seenDefines).semantic;
 }
@@ -333,14 +338,14 @@ function inferSymbolType(symbol: NuSMVSymbol, seenDefines: Set<string>): Semanti
     return UNKNOWN_TYPE;
 }
 
-function resolvePathState(path: VariablePath, seenDefines: Set<string>): PathState {
+function resolvePathState(path: VariablePath, seenDefines: Set<string>, segmentCount: number = path.segments.length): PathState {
     const module = findContainingModule(path);
     if (!module) {
         return { semantic: UNKNOWN_TYPE };
     }
 
     let current = symbolToState(collectModuleSymbols(module).find(symbol => symbol.name === path.head), seenDefines);
-    for (const segment of path.segments) {
+    for (const segment of path.segments.slice(0, segmentCount)) {
         current = resolveSegmentState(current, segment, seenDefines);
         if (!current.symbol && current.semantic.kind === 'unknown' && !current.astType) {
             break;

@@ -93,6 +93,7 @@
   "scripts": {
     "langium:generate": "langium generate",
     "build": "npm run langium:generate && tsc -p tsconfig.json",
+    "test": "npm run build && node --test out/**/*.test.js",
     "watch": "tsc -w -p tsconfig.json",
     "vscode:prepublish": "npm run build"
   },
