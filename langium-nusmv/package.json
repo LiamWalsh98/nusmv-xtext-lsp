@@ -2,12 +2,12 @@
   "name": "vscode-nusmv",
   "displayName": "NuSMV VSCode Extension",
   "description": "NuSMV extension for VSCode powered by Langium",
-  "version": "0.9.5",
+  "version": "0.9.6",
   "publisher": "LiamWalsh98",
   "license": "EPL-1.0",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/LiamWalsh98/nusmv-xtext-lsp.git",
+    "url": "git+https://github.com/LiamWalsh98/vscode-nusmv.git",
     "directory": "langium-nusmv"
   },
   "type": "module",
