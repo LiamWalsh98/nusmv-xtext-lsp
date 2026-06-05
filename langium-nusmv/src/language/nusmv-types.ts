@@ -124,6 +124,24 @@ export function resolveSymbol(path: VariablePath): NuSMVSymbol | undefined {
     return resolvePathState(path, new Set()).symbol;
 }
 
+export function resolvePathSymbol(path: VariablePath, segmentCount: number = path.segments.length): NuSMVSymbol | undefined {
+    return resolvePathState(path, new Set(), segmentCount).symbol;
+}
+
+export function resolveContextualEnumLiteral(path: VariablePath, seenDefines: Set<string> = new Set()): EnumValue | undefined {
+    if (path.segments.length > 0) {
+        return undefined;
+    }
+    const literal = normalizePathHead(path.head);
+    for (const enumType of collectExpectedEnumDeclarations(path, seenDefines)) {
+        const value = enumType.values.find(candidate => candidate.name === literal);
+        if (value) {
+            return value;
+        }
+    }
+    return undefined;
+}
+
 export function resolvePathTargetModule(path: VariablePath, segmentCount: number = path.segments.length): Module | undefined {
     const state = resolvePathState(path, new Set(), segmentCount);
     return state.astType ? moduleFromType(state.astType) : undefined;
@@ -134,7 +152,7 @@ export function inferVariablePathType(path: VariablePath, seenDefines: Set<strin
 }
 
 export function isContextualEnumLiteral(path: VariablePath, seenDefines: Set<string> = new Set()): boolean {
-    return inferContextualEnumLiteralType(path, seenDefines) !== undefined;
+    return resolveContextualEnumLiteral(path, seenDefines) !== undefined;
 }
 
 export function inferExpressionType(
@@ -385,19 +403,25 @@ function inferContextualEnumLiteralType(path: VariablePath, seenDefines: Set<str
 }
 
 function collectExpectedEnumTypes(path: VariablePath, seenDefines: Set<string>): Array<Extract<SemanticType, { kind: 'enum' }>> {
-    const types: Array<Extract<SemanticType, { kind: 'enum' }>> = [];
+    return collectExpectedEnumDeclarations(path, seenDefines)
+        .map(type => inferDeclaredType(type))
+        .filter((type): type is Extract<SemanticType, { kind: 'enum' }> => type.kind === 'enum');
+}
+
+function collectExpectedEnumDeclarations(path: VariablePath, seenDefines: Set<string>): EnumType[] {
+    const declarations: EnumType[] = [];
     const reference = AstUtils.getContainerOfType(path, isReferenceExpression);
     if (!reference) {
-        return types;
+        return declarations;
     }
 
     const binary = AstUtils.getContainerOfType(reference, isBinaryExpression);
     if (binary && (binary.operator === '=' || binary.operator === '!=')) {
         const opposite = expressionOnOtherSide(binary, reference);
         if (opposite) {
-            const oppositeType = inferNonContextualExpressionType(opposite, seenDefines);
-            if (oppositeType.kind === 'enum') {
-                types.push(oppositeType);
+            const oppositeEnum = inferNonContextualEnumDeclaration(opposite, seenDefines);
+            if (oppositeEnum) {
+                declarations.push(oppositeEnum);
             }
         }
     }
@@ -407,14 +431,44 @@ function collectExpectedEnumTypes(path: VariablePath, seenDefines: Set<string>):
     if (assignment && valueExpression && isAssignmentValueContext(reference, valueExpression)) {
         const symbol = resolveSymbol(assignment.var);
         if (symbol && isVarBody(symbol)) {
-            const targetType = inferDeclaredType(symbol.type);
-            if (targetType.kind === 'enum') {
-                types.push(targetType);
+            if (isEnumType(symbol.type)) {
+                declarations.push(symbol.type);
             }
         }
     }
 
-    return types;
+    return declarations;
+}
+
+function inferNonContextualEnumDeclaration(expression: unknown, seenDefines: Set<string>): EnumType | undefined {
+    if (isGroupedExpression(expression)) {
+        return inferNonContextualEnumDeclaration(expression.expression, seenDefines);
+    }
+    if (isNextCallExpression(expression)) {
+        return inferNonContextualEnumDeclaration(expression.expression, seenDefines);
+    }
+    if (isReferenceExpression(expression)) {
+        return enumDeclarationForSymbol(resolvePathSymbol(expression.path));
+    }
+    if (isDefineBody(expression)) {
+        if (seenDefines.has(expression.name)) {
+            return undefined;
+        }
+        const nextSeen = new Set(seenDefines);
+        nextSeen.add(expression.name);
+        return inferNonContextualEnumDeclaration(expression.assignment, nextSeen);
+    }
+    return undefined;
+}
+
+function enumDeclarationForSymbol(symbol: NuSMVSymbol | undefined): EnumType | undefined {
+    if (isVarBody(symbol) && isEnumType(symbol.type)) {
+        return symbol.type;
+    }
+    if (isEnumValue(symbol)) {
+        return symbol.$container;
+    }
+    return undefined;
 }
 
 function inferNonContextualExpressionType(expression: unknown, seenDefines: Set<string>): SemanticType {
