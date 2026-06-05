@@ -1,4 +1,0 @@
-Manifest-Version: 1.0
-Bundle-SymbolicName: org.xtext.nusmv.language.ide
-Main-Class: org.eclipse.xtext.ide.server.ServerLauncher
-

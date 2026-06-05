@@ -11,7 +11,7 @@ export default {
     tokenizer: {
         initial: [
             { regex: /0(?:u|s)?(?:b|B|o|O|_|d|D|h|H)\d*_[A-Fa-f0-9]+/, action: {"token":"WORD"} },
-            { regex: /[A-Za-z_][A-Za-z0-9_$#\-.]*/, action: { cases: { '@keywords': {"token":"keyword"}, '@default': {"token":"ID"} }} },
+            { regex: /[A-Za-z_][A-Za-z0-9_$#-]*/, action: { cases: { '@keywords': {"token":"keyword"}, '@default': {"token":"ID"} }} },
             { regex: /[0-9]+/, action: { cases: { '@keywords': {"token":"keyword"}, '@default': {"token":"number"} }} },
             { include: '@whitespace' },
             { regex: /@symbols/, action: { cases: { '@operators': {"token":"operator"}, '@default': {"token":""} }} },

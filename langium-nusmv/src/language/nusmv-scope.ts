@@ -7,11 +7,14 @@ import {
     LocalSymbols,
     MultiMap
 } from 'langium';
+import type { ReferenceInfo } from 'langium';
 import {
+    isAsyncProcessType,
+    isSyncProcessType,
     NuSmvModel
 } from './generated/ast.js';
 import { NuSMVServices } from './nusmv-module.js';
-import { collectModuleSymbols } from './nusmv-symbols.js';
+import { collectDeclaredModules, collectModuleSymbols } from './nusmv-symbols.js';
 
 export class NuSMVScopeComputation extends DefaultScopeComputation {
 
@@ -31,4 +34,15 @@ export class NuSMVScopeComputation extends DefaultScopeComputation {
     }
 }
 
-export class NuSMVScopeProvider extends DefaultScopeProvider {}
+export class NuSMVScopeProvider extends DefaultScopeProvider {
+
+    override getScope(context: ReferenceInfo) {
+        if (
+            context.property === 'module' &&
+            (isAsyncProcessType(context.container) || isSyncProcessType(context.container))
+        ) {
+            return this.createScopeForNodes(collectDeclaredModules(context.container));
+        }
+        return super.getScope(context);
+    }
+}

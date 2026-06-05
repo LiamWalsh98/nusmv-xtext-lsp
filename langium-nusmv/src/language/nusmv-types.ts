@@ -19,6 +19,7 @@ import {
     isAsyncProcessType,
     isBinaryExpression,
     isBooleanType,
+    isCaseBranch,
     isCaseExpression,
     isDefineBody,
     isEnumType,
@@ -26,10 +27,12 @@ import {
     isFormalParameter,
     isFunctionCallExpression,
     isGroupedExpression,
+    isInitBody,
     isIntervalLiteral,
     isIntervalType,
     isLiteralExpression,
     isModule,
+    isNextBody,
     isNextCallExpression,
     isReferenceExpression,
     isSetExpression,
@@ -38,11 +41,14 @@ import {
     isUnaryExpression,
     isUnsignedWordType,
     isUntilCtlExpression,
+    isVarBodyAssign,
     isVarBody,
     isWordLiteral,
     isWordType,
+    InitBody,
     LiteralExpression,
     Module,
+    NextBody,
     NextCallExpression,
     ReferenceExpression,
     SetExpression,
@@ -52,6 +58,7 @@ import {
     UnsignedWordType,
     UntilCtlExpression,
     VarBody,
+    VarBodyAssign,
     VariablePath,
     WordLiteral,
     WordType
@@ -117,8 +124,17 @@ export function resolveSymbol(path: VariablePath): NuSMVSymbol | undefined {
     return resolvePathState(path, new Set()).symbol;
 }
 
+export function resolvePathTargetModule(path: VariablePath, segmentCount: number = path.segments.length): Module | undefined {
+    const state = resolvePathState(path, new Set(), segmentCount);
+    return state.astType ? moduleFromType(state.astType) : undefined;
+}
+
 export function inferVariablePathType(path: VariablePath, seenDefines: Set<string> = new Set()): SemanticType {
     return resolvePathState(path, seenDefines).semantic;
+}
+
+export function isContextualEnumLiteral(path: VariablePath, seenDefines: Set<string> = new Set()): boolean {
+    return inferContextualEnumLiteralType(path, seenDefines) !== undefined;
 }
 
 export function inferExpressionType(
@@ -296,7 +312,10 @@ function inferSetExpressionType(expression: SetExpression, seenDefines: Set<stri
 }
 
 function inferReferenceType(expression: ReferenceExpression, seenDefines: Set<string>): SemanticType {
-    return inferVariablePathType(expression.path, seenDefines);
+    const type = inferVariablePathType(expression.path, seenDefines);
+    return type.kind === 'unknown'
+        ? inferContextualEnumLiteralType(expression.path, seenDefines) ?? type
+        : type;
 }
 
 function inferLiteralType(expression: LiteralExpression): SemanticType {
@@ -333,20 +352,162 @@ function inferSymbolType(symbol: NuSMVSymbol, seenDefines: Set<string>): Semanti
     return UNKNOWN_TYPE;
 }
 
-function resolvePathState(path: VariablePath, seenDefines: Set<string>): PathState {
+function resolvePathState(path: VariablePath, seenDefines: Set<string>, segmentCount: number = path.segments.length): PathState {
     const module = findContainingModule(path);
     if (!module) {
         return { semantic: UNKNOWN_TYPE };
     }
 
-    let current = symbolToState(collectModuleSymbols(module).find(symbol => symbol.name === path.head), seenDefines);
-    for (const segment of path.segments) {
+    const headName = normalizePathHead(path.head);
+    let current = headName === 'running'
+        ? { semantic: BOOLEAN_TYPE }
+        : symbolToState(collectModuleSymbols(module).find(symbol => symbol.name === headName), seenDefines);
+    for (const segment of path.segments.slice(0, segmentCount)) {
         current = resolveSegmentState(current, segment, seenDefines);
         if (!current.symbol && current.semantic.kind === 'unknown' && !current.astType) {
             break;
         }
     }
     return current;
+}
+
+function normalizePathHead(head: string): string {
+    return head.endsWith('.') ? head.slice(0, -1) : head;
+}
+
+function inferContextualEnumLiteralType(path: VariablePath, seenDefines: Set<string>): SemanticType | undefined {
+    if (path.segments.length > 0) {
+        return undefined;
+    }
+    const literal = normalizePathHead(path.head);
+    const expectedTypes = collectExpectedEnumTypes(path, seenDefines);
+    return expectedTypes.find(type => type.values?.has(literal));
+}
+
+function collectExpectedEnumTypes(path: VariablePath, seenDefines: Set<string>): Array<Extract<SemanticType, { kind: 'enum' }>> {
+    const types: Array<Extract<SemanticType, { kind: 'enum' }>> = [];
+    const reference = AstUtils.getContainerOfType(path, isReferenceExpression);
+    if (!reference) {
+        return types;
+    }
+
+    const binary = AstUtils.getContainerOfType(reference, isBinaryExpression);
+    if (binary && (binary.operator === '=' || binary.operator === '!=')) {
+        const opposite = expressionOnOtherSide(binary, reference);
+        if (opposite) {
+            const oppositeType = inferNonContextualExpressionType(opposite, seenDefines);
+            if (oppositeType.kind === 'enum') {
+                types.push(oppositeType);
+            }
+        }
+    }
+
+    const assignment = AstUtils.getContainerOfType(reference, isAssignmentLikeContainer);
+    const valueExpression = assignment ? assignmentValueExpression(assignment) : undefined;
+    if (assignment && valueExpression && isAssignmentValueContext(reference, valueExpression)) {
+        const symbol = resolveSymbol(assignment.var);
+        if (symbol && isVarBody(symbol)) {
+            const targetType = inferDeclaredType(symbol.type);
+            if (targetType.kind === 'enum') {
+                types.push(targetType);
+            }
+        }
+    }
+
+    return types;
+}
+
+function inferNonContextualExpressionType(expression: unknown, seenDefines: Set<string>): SemanticType {
+    if (isGroupedExpression(expression)) {
+        return inferNonContextualExpressionType(expression.expression, seenDefines);
+    }
+    if (isNextCallExpression(expression)) {
+        return inferNonContextualExpressionType(expression.expression, seenDefines);
+    }
+    if (isReferenceExpression(expression)) {
+        return inferVariablePathType(expression.path, seenDefines);
+    }
+    if (isLiteralExpression(expression)) {
+        return inferLiteralType(expression);
+    }
+    if (isIntervalLiteral(expression)) {
+        return INTEGER_TYPE;
+    }
+    if (isWordLiteral(expression)) {
+        return WORD_TYPE;
+    }
+    if (isFunctionCallExpression(expression)) {
+        switch (expression.function) {
+            case 'bool':
+                return BOOLEAN_TYPE;
+            case 'toint':
+                return INTEGER_TYPE;
+            case 'word1':
+                return WORD_TYPE;
+        }
+    }
+    return UNKNOWN_TYPE;
+}
+
+function expressionOnOtherSide(binary: BinaryExpression, reference: ReferenceExpression): Expression | undefined {
+    if (isDescendantOf(reference, binary.left)) {
+        return binary.right;
+    }
+    if (isDescendantOf(reference, binary.right)) {
+        return binary.left;
+    }
+    return undefined;
+}
+
+function assignmentValueExpression(assignment: InitBody | NextBody | VarBodyAssign): Expression {
+    if (isInitBody(assignment)) {
+        return assignment.initial;
+    }
+    if (isNextBody(assignment)) {
+        return assignment.next;
+    }
+    return assignment.assignment;
+}
+
+function isAssignmentValueContext(reference: ReferenceExpression, valueExpression: Expression): boolean {
+    if (!isDescendantOf(reference, valueExpression)) {
+        return false;
+    }
+    let current: unknown = reference;
+    while (typeof current === 'object' && current !== null && current !== valueExpression) {
+        const parent = (current as { $container?: unknown }).$container;
+        if (isGroupedExpression(parent) || isNextCallExpression(parent)) {
+            if (parent.expression !== current) {
+                return false;
+            }
+            current = parent;
+            continue;
+        }
+        if (isCaseBranch(parent)) {
+            if (isDescendantOf(current, parent.condition) || !isDescendantOf(current, parent.value)) {
+                return false;
+            }
+            current = parent.$container;
+            continue;
+        }
+        return false;
+    }
+    return current === valueExpression;
+}
+
+function isAssignmentLikeContainer(node: object): node is InitBody | NextBody | VarBodyAssign {
+    return isInitBody(node) || isNextBody(node) || isVarBodyAssign(node);
+}
+
+function isDescendantOf(node: object, ancestor: object): boolean {
+    let current: unknown = node;
+    while (typeof current === 'object' && current !== null) {
+        if (current === ancestor) {
+            return true;
+        }
+        current = (current as { $container?: unknown }).$container;
+    }
+    return false;
 }
 
 function resolveSegmentState(current: PathState, segment: VariablePath['segments'][number], seenDefines: Set<string>): PathState {

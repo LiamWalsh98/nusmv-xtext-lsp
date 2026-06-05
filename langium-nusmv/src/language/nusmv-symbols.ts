@@ -7,6 +7,7 @@ import {
     FormalParameter,
     isModule,
     Module,
+    NuSmvModel,
     VarBody
 } from './generated/ast.js';
 
@@ -35,8 +36,18 @@ export function collectModuleSymbols(module: Module): NuSMVSymbol[] {
     return symbols;
 }
 
+export function collectVisibleModuleSymbols(module: Module): Exclude<NuSMVSymbol, Module>[] {
+    return collectModuleSymbols(module).filter((symbol): symbol is Exclude<NuSMVSymbol, Module> => !isModule(symbol));
+}
+
 export function collectSymbolNames(module: Module): string[] {
     return [...new Set(collectModuleSymbols(module).map(symbol => symbol.name))];
+}
+
+export function collectDeclaredModules(node: object): Module[] {
+    const root = AstUtils.getContainerOfType(node as never, (item): item is NuSmvModel => (item as NuSmvModel | undefined)?.$type === 'NuSmvModel')
+        ?? ((node as NuSmvModel | undefined)?.$type === 'NuSmvModel' ? node as NuSmvModel : undefined);
+    return root?.modules ?? [];
 }
 
 function collectEnumValues(variable: VarBody): EnumValue[] {
