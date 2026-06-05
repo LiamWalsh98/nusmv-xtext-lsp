@@ -6,7 +6,7 @@ hidden terminal WS: /\s+/;
 hidden terminal SL_COMMENT: /--[^\n\r]*/;
 
 terminal WORD: /0(?:u|s)?(?:b|B|o|O|_|d|D|h|H)\d*_[A-Fa-f0-9]+/;
-terminal ID: /[A-Za-z_][A-Za-z0-9_$#\-.]*/;
+terminal ID: /[A-Za-z_][A-Za-z0-9_$#-]*/;
 terminal INT returns number: /[0-9]+/;
 
 entry NuSmvModel:
@@ -188,7 +188,7 @@ MultiplicativeExpression returns Expression:
     PrefixExpression ({infer BinaryExpression.left=current} operator=('*' | '/' | 'mod' | '::') right=PrefixExpression)*;
 
 PrefixExpression returns Expression:
-    {infer UnaryExpression} operator=('!' | '-' | '+') operand=PrefixExpression
+    {infer UnaryExpression} operator=('!' | '-' | '+') operand=TemporalExpression
     | PrimaryExpression;
 
 PrimaryExpression:

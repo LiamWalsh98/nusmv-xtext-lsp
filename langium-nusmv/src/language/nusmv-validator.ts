@@ -3,6 +3,7 @@ import {
     AssignConstraint,
     BinaryExpression,
     CaseBranch,
+    CompassionExpression,
     CtlSpecification,
     Expression,
     FairnessExpression,
@@ -26,9 +27,11 @@ import {
     describeType,
     inferDeclaredType,
     inferExpressionType,
+    isContextualEnumLiteral,
     isAssignable,
     isBooleanLike,
     isIntegerLike,
+    resolvePathTargetModule,
     resolveSymbol
 } from './nusmv-types.js';
 
@@ -39,12 +42,48 @@ export class NuSMVValidator {
             return;
         }
         const symbols = new Set(collectSymbolNames(module));
-        if (!symbols.has(path.head)) {
+        if (path.head !== 'running' && !symbols.has(normalizePathHead(path.head)) && !isContextualEnumLiteral(path)) {
             accept('error', `Unknown symbol '${path.head}'.`, { node: path, property: 'head' });
+            return;
         }
-        for (const segment of path.segments) {
-            if (segment.$type === 'DotSegment' && !symbols.has(segment.symbol)) {
-                accept('error', `Unknown symbol '${segment.symbol}'.`, { node: segment, property: 'symbol' });
+        for (const [index, segment] of path.segments.entries()) {
+            if (segment.$type === 'DotSegment') {
+                const targetModule = resolvePathTargetModule(path, index);
+                const segmentSymbols = targetModule ? new Set(collectSymbolNames(targetModule)) : undefined;
+                if (!segmentSymbols?.has(segment.symbol)) {
+                    accept('error', `Unknown symbol '${segment.symbol}'.`, { node: segment, property: 'symbol' });
+                }
+            }
+        }
+    }
+
+    checkFairnessRunning(node: FairnessExpression, accept: ValidationAcceptor): void {
+        if (isRunningReference(node.expression)) {
+            return;
+        }
+        this.checkBooleanConstraint(node, accept);
+    }
+
+    checkJusticeRunning(node: JusticeExpression, accept: ValidationAcceptor): void {
+        if (isRunningReference(node.expression)) {
+            return;
+        }
+        this.checkBooleanConstraint(node, accept);
+    }
+
+    checkCompassionRunning(node: CompassionExpression, accept: ValidationAcceptor): void {
+        const firstIsRunning = isRunningReference(node.first);
+        const secondIsRunning = isRunningReference(node.second);
+        if (!firstIsRunning) {
+            const firstType = inferExpressionType(node.first);
+            if (!isBooleanLike(firstType)) {
+                accept('error', `Constraint expression must be boolean, found ${describeType(firstType)}.`, { node, property: 'first' });
+            }
+        }
+        if (!secondIsRunning) {
+            const secondType = inferExpressionType(node.second);
+            if (!isBooleanLike(secondType)) {
+                accept('error', `Constraint expression must be boolean, found ${describeType(secondType)}.`, { node, property: 'second' });
             }
         }
     }
@@ -174,6 +213,9 @@ export class NuSMVValidator {
     }
 
     private checkAssignmentLike(path: VariablePath, expression: Expression, label: string, accept: ValidationAcceptor): void {
+        if (!path || !expression) {
+            return;
+        }
         const symbol = resolveSymbol(path);
         if (!symbol || !('type' in symbol)) {
             return;
@@ -220,12 +262,27 @@ export function registerValidationChecks(services: NuSMVServices): void {
         InitConstraint: validator.checkBooleanConstraint,
         InvarConstraint: validator.checkBooleanConstraint,
         TransConstraint: validator.checkBooleanConstraint,
-        FairnessExpression: validator.checkBooleanConstraint,
-        JusticeExpression: validator.checkBooleanConstraint,
+        JusticeExpression: validator.checkJusticeRunning,
+        FairnessExpression: validator.checkFairnessRunning,
+        CompassionExpression: validator.checkCompassionRunning,
         CtlSpecification: validator.checkSpecification,
         InvarSpecification: validator.checkSpecification,
         LtlSpecification: validator.checkSpecification,
         PslSpecification: validator.checkSpecification
     };
     registry.register(checks, validator);
+}
+
+function normalizePathHead(head: string): string {
+    return head.endsWith('.') ? head.slice(0, -1) : head;
+}
+
+function isRunningReference(node: unknown): node is { path: { head: string } } {
+    return typeof node === 'object'
+        && node !== null
+        && '$type' in node
+        && (node as { $type?: string }).$type === 'ReferenceExpression'
+        && 'path' in node
+        && typeof (node as { path?: { head?: string } }).path?.head === 'string'
+        && (node as { path: { head: string } }).path.head === 'running';
 }

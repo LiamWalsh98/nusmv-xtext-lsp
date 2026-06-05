@@ -152,18 +152,18 @@ export class NuSMVCompletionProvider extends DefaultCompletionProvider {
 
     private getDotAccessContext(targetNode: AstNode, previousNode: AstNode | undefined, text: string, offset: number): Module | undefined {
         const previousCharacter = offset > 0 ? text[offset - 1] : undefined;
-        const path = AstUtils.getContainerOfType(targetNode, isVariablePath)
-            ?? (previousNode ? AstUtils.getContainerOfType(previousNode, isVariablePath) : undefined);
+        const path = this.findSelfOrContainer(targetNode, isVariablePath)
+            ?? (previousNode ? this.findSelfOrContainer(previousNode, isVariablePath) : undefined);
         if (!path) {
             return undefined;
         }
 
         if (previousCharacter === '.') {
-            return resolvePathTargetModule(path, path.segments.length);
+            return resolvePathTargetModule(path, Math.max(0, path.segments.length - 1));
         }
 
-        const segment = AstUtils.getContainerOfType(targetNode, isDotSegment)
-            ?? (previousNode ? AstUtils.getContainerOfType(previousNode, isDotSegment) : undefined);
+        const segment = this.findSelfOrContainer(targetNode, isDotSegment)
+            ?? (previousNode ? this.findSelfOrContainer(previousNode, isDotSegment) : undefined);
         if (!segment) {
             return undefined;
         }
@@ -176,18 +176,18 @@ export class NuSMVCompletionProvider extends DefaultCompletionProvider {
         if (offset > 0 && text[offset - 1] === '.') {
             return false;
         }
-        const path = AstUtils.getContainerOfType(targetNode, isVariablePath);
+        const path = this.findSelfOrContainer(targetNode, isVariablePath);
         if (!path) {
             return false;
         }
-        if (AstUtils.getContainerOfType(targetNode, isDotSegment)) {
+        if (this.findSelfOrContainer(targetNode, isDotSegment)) {
             return false;
         }
         return targetNode === path || targetNode.$container === path;
     }
 
     private isModuleReferenceContext(targetNode: AstNode): boolean {
-        const container = AstUtils.getContainerOfType(targetNode, node => isAsyncProcessType(node) || isSyncProcessType(node));
+        const container = this.findSelfOrContainer(targetNode, node => isAsyncProcessType(node) || isSyncProcessType(node));
         return !!container;
     }
 
@@ -197,7 +197,7 @@ export class NuSMVCompletionProvider extends DefaultCompletionProvider {
     }
 
     private getEnumAssignmentValues(targetNode: AstNode): EnumValue[] {
-        const assignment = AstUtils.getContainerOfType(targetNode, isAssignmentLikeContainer);
+        const assignment = this.findSelfOrContainer(targetNode, isAssignmentLikeContainer);
         if (!assignment || !('var' in assignment)) {
             return [];
         }
@@ -205,6 +205,10 @@ export class NuSMVCompletionProvider extends DefaultCompletionProvider {
         return isVarBody(symbol) && symbol.type.$type === EnumType.$type
             ? symbol.type.values
             : [];
+    }
+
+    private findSelfOrContainer<T extends AstNode>(targetNode: AstNode, predicate: (node: AstNode) => node is T): T | undefined {
+        return predicate(targetNode) ? targetNode : AstUtils.getContainerOfType(targetNode, predicate);
     }
 
     private createSymbolCompletionItem(symbol: NuSMVSymbol) {
