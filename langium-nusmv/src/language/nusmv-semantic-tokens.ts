@@ -5,17 +5,12 @@ import {
     AsyncProcessType,
     BinaryExpression,
     CaseExpression,
-    ConstantSymbol,
-    DefineBody,
     DotSegment,
-    EnumValue,
-    FormalParameter,
     FunctionCallExpression,
     InitBody,
     isAsyncProcessType,
     isBinaryExpression,
     isCaseExpression,
-    isConstantSymbol,
     isDefineBody,
     isDotSegment,
     isEnumValue,
@@ -28,7 +23,6 @@ import {
     isSyncProcessType,
     isUnaryExpression,
     isUntilCtlExpression,
-    isVarBody,
     isVariablePath,
     Module,
     NextBody,
@@ -36,36 +30,20 @@ import {
     SyncProcessType,
     UnaryExpression,
     UntilCtlExpression,
-    VarBody,
     VariablePath
 } from './generated/ast.js';
+import type { NuSMVSymbol } from './nusmv-symbols.js';
 import { resolveContextualEnumLiteral, resolvePathSymbol } from './nusmv-types.js';
 
 export class NuSMVSemanticTokenProvider extends AbstractSemanticTokenProvider {
 
     protected override highlightElement(node: AstNode, acceptor: SemanticTokenAcceptor): void {
-        if (isModule(node)) {
-            this.highlightDeclaration(acceptor, node, 'name', SemanticTokenTypes.type);
-            return;
-        }
         if (isFormalParameter(node)) {
-            this.highlightDeclaration(acceptor, node, 'name', SemanticTokenTypes.parameter);
-            return;
-        }
-        if (isVarBody(node)) {
-            this.highlightDeclaration(acceptor, node, 'name', SemanticTokenTypes.variable);
-            return;
-        }
-        if (isDefineBody(node)) {
-            this.highlightDeclaration(acceptor, node, 'name', SemanticTokenTypes.variable);
-            return;
-        }
-        if (isConstantSymbol(node)) {
-            this.highlightDeclaration(acceptor, node, 'name', SemanticTokenTypes.variable, SemanticTokenModifiers.readonly);
-            return;
-        }
-        if (isEnumValue(node)) {
-            this.highlightDeclaration(acceptor, node, 'name', SemanticTokenTypes.enumMember);
+            acceptor({
+                node,
+                property: 'name',
+                type: SemanticTokenTypes.parameter
+            });
             return;
         }
         if (isAsyncProcessType(node) || isSyncProcessType(node)) {
@@ -112,24 +90,6 @@ export class NuSMVSemanticTokenProvider extends AbstractSemanticTokenProvider {
         if (isCaseExpression(node)) {
             this.highlightCaseKeywords(node, acceptor);
         }
-    }
-
-    private highlightDeclaration(
-        acceptor: SemanticTokenAcceptor,
-        node: Module | FormalParameter | VarBody | DefineBody | ConstantSymbol | EnumValue,
-        property: 'name',
-        type: string,
-        extraModifier?: string
-    ): void {
-        const modifiers = extraModifier
-            ? [SemanticTokenModifiers.declaration, extraModifier]
-            : SemanticTokenModifiers.declaration;
-        acceptor({
-            node,
-            property,
-            type,
-            modifier: modifiers
-        });
     }
 
     private highlightModuleReference(acceptor: SemanticTokenAcceptor, node: AsyncProcessType | SyncProcessType): void {
@@ -241,17 +201,20 @@ export class NuSMVSemanticTokenProvider extends AbstractSemanticTokenProvider {
     }
 }
 
-function semanticTypeForSymbol(symbol: Module | VarBody | FormalParameter | DefineBody | ConstantSymbol | EnumValue): string {
+function semanticTypeForSymbol(symbol: NuSMVSymbol): string {
     if (isModule(symbol)) {
         return SemanticTokenTypes.type;
     }
     if (isFormalParameter(symbol)) {
         return SemanticTokenTypes.parameter;
     }
+    if (isDefineBody(symbol)) {
+        return SemanticTokenTypes.function;
+    }
     if (isEnumValue(symbol)) {
         return SemanticTokenTypes.enumMember;
     }
-    return SemanticTokenTypes.variable;
+    return SemanticTokenTypes.property;
 }
 
 function isTemporalKeyword(operator: UnaryExpression['operator']): boolean {

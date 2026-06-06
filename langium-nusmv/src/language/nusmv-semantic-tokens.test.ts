@@ -12,7 +12,7 @@ test.afterEach(async () => {
     await clearDocuments(shared);
 });
 
-test('highlights declarations and usages for variables, defines, enum members, parameters, and temporal operators', async () => {
+test('highlights references for variables, defines, enum members, parameters, and temporal operators', async () => {
     const { tokens } = await highlightNuSMV(`
         MODULE proc(id, lock, N)
         VAR
@@ -30,12 +30,12 @@ test('highlights declarations and usages for variables, defines, enum members, p
         SPEC EF p1.locked;
     `);
 
-    assertTokenCount(tokens, 'iHoldLock', SemanticTokenTypes.variable, 2);
-    assertTokenCount(tokens, 'locked', SemanticTokenTypes.variable, 2);
-    assertTokenCount(tokens, 'w1', SemanticTokenTypes.enumMember, 2);
-    assertTokenCount(tokens, 'b1c1', SemanticTokenTypes.enumMember, 2);
+    assertTokenCount(tokens, 'iHoldLock', SemanticTokenTypes.function, 1);
+    assertTokenCount(tokens, 'locked', SemanticTokenTypes.function, 1);
+    assertTokenCount(tokens, 'w1', SemanticTokenTypes.enumMember, 1);
+    assertTokenCount(tokens, 'b1c1', SemanticTokenTypes.enumMember, 1);
     assertTokenCount(tokens, 'id', SemanticTokenTypes.parameter, 2);
-    assertTokenCount(tokens, 'N', SemanticTokenTypes.variable, 2);
+    assertTokenCount(tokens, 'N', SemanticTokenTypes.property, 1);
     assertHasToken(tokens, 'AG', SemanticTokenTypes.keyword);
     assertHasToken(tokens, 'AF', SemanticTokenTypes.keyword);
     assertHasToken(tokens, 'EF', SemanticTokenTypes.keyword);

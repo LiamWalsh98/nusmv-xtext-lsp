@@ -17,6 +17,32 @@ test('uses a manual TextMate grammar with NuSMV-specific scopes', async () => {
     assert.ok(serialized.includes('constant.numeric.word.nusmv'));
 });
 
+test('maps semantic variable-like tokens to theme-friendly scopes', async () => {
+    const manifest = JSON.parse(await readFile(new URL('../../package.json', import.meta.url), 'utf-8'));
+    const mapping = manifest.contributes.semanticTokenScopes.find(scope => scope.language === 'nusmv');
+
+    assert.deepEqual(mapping.scopes.property, [
+        'variable.other.property.nusmv',
+        'variable.other.property'
+    ]);
+    assert.deepEqual(mapping.scopes['property:declaration'], [
+        'entity.name.variable.nusmv',
+        'entity.name.variable'
+    ]);
+    assert.deepEqual(mapping.scopes.parameter, [
+        'variable.parameter.nusmv',
+        'variable.parameter'
+    ]);
+    assert.deepEqual(mapping.scopes.function, [
+        'entity.name.function.nusmv',
+        'entity.name.function'
+    ]);
+    assert.deepEqual(mapping.scopes.enumMember, [
+        'constant.other.enum.nusmv',
+        'constant.other.enum'
+    ]);
+});
+
 test('does not regenerate the manual TextMate grammar from Langium config', async () => {
     const config = JSON.parse(await readFile(new URL('../../langium-config.json', import.meta.url), 'utf-8'));
     assert.equal(config.languages[0].textMate, undefined);
