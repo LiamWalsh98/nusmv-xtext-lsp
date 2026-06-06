@@ -66,10 +66,15 @@ const BUILTIN_LITERAL_ITEMS = [
     createLiteralItem('self')
 ];
 
+const IDENTIFIER_TRIGGER_CHARACTERS = [
+    '_',
+    ...'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('')
+];
+
 export class NuSMVCompletionProvider extends DefaultCompletionProvider {
 
     override readonly completionOptions = {
-        triggerCharacters: ['.']
+        triggerCharacters: ['.', ...IDENTIFIER_TRIGGER_CHARACTERS]
     };
 
     constructor(services: NuSMVServices) {

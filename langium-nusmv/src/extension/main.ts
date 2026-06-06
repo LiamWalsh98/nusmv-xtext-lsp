@@ -54,7 +54,6 @@ export function activate(context: vscode.ExtensionContext): void {
                 return next(document);
             },
             didChange: async (event, next) => {
-                outputChannel?.appendLine(`didChange for ${event.document.uri.toString()}`);
                 if (shouldSkipLanguageServer(event.document) || skippedDocuments.has(event.document.uri.toString())) {
                     outputChannel?.appendLine(`Ignoring change for skipped document ${event.document.uri.toString()}`);
                     return;

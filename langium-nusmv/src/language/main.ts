@@ -1,3 +1,4 @@
+import { DocumentState } from 'langium';
 import { startLanguageServer } from 'langium/lsp';
 import { NodeFileSystem } from 'langium/node';
 import { createConnection, ProposedFeatures } from 'vscode-languageserver/node.js';
@@ -9,4 +10,6 @@ const { shared } = createNuSMVServices({
     ...NodeFileSystem
 });
 
-startLanguageServer(shared);
+startLanguageServer(shared, {
+    CompletionProvider: DocumentState.ComputedScopes
+});
