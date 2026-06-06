@@ -98,7 +98,10 @@ export function describeType(type: SemanticType): string {
     }
 }
 
-export function inferDeclaredType(type: Type): SemanticType {
+export function inferDeclaredType(type: Type | undefined): SemanticType {
+    if (!type) {
+        return UNKNOWN_TYPE;
+    }
     if (isBooleanType(type)) {
         return BOOLEAN_TYPE;
     }
@@ -586,7 +589,7 @@ function resolveSegmentState(current: PathState, segment: VariablePath['segments
     }
 }
 
-function resolveTypeMember(type: Type, member: string): NuSMVSymbol | undefined {
+function resolveTypeMember(type: Type | undefined, member: string): NuSMVSymbol | undefined {
     const targetModule = moduleFromType(type);
     if (!targetModule) {
         return undefined;
@@ -594,7 +597,7 @@ function resolveTypeMember(type: Type, member: string): NuSMVSymbol | undefined 
     return collectModuleSymbols(targetModule).find(symbol => symbol.name === member);
 }
 
-function moduleFromType(type: Type): Module | undefined {
+function moduleFromType(type: Type | undefined): Module | undefined {
     if (isSyncProcessType(type) || isAsyncProcessType(type)) {
         return type.module.ref;
     }
@@ -626,7 +629,10 @@ function symbolToState(symbol: NuSMVSymbol | undefined, seenDefines: Set<string>
     return { symbol, semantic: UNKNOWN_TYPE };
 }
 
-function typeToState(type: Type, symbol?: NuSMVSymbol): PathState {
+function typeToState(type: Type | undefined, symbol?: NuSMVSymbol): PathState {
+    if (!type) {
+        return { symbol, semantic: UNKNOWN_TYPE };
+    }
     return {
         symbol,
         astType: type,

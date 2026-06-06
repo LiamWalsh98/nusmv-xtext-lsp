@@ -12,7 +12,6 @@ import {
     CtlSpecification,
     DefineBody,
     DotSegment,
-    EnumType,
     EnumValue,
     FairnessExpression,
     FormalParameter,
@@ -38,6 +37,7 @@ import {
     isCtlSpecification,
     isDefineBody,
     isDotSegment,
+    isEnumType,
     isEnumValue,
     isFairnessExpression,
     isFormalParameter,
@@ -207,7 +207,7 @@ export class NuSMVCompletionProvider extends DefaultCompletionProvider {
             return [];
         }
         const symbol = resolveSymbol(assignment.var);
-        return isVarBody(symbol) && symbol.type.$type === EnumType.$type
+        return isVarBody(symbol) && isEnumType(symbol.type)
             ? symbol.type.values
             : [];
     }

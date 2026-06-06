@@ -5,6 +5,7 @@
 - Improve context-sensitive highlighting
 - Add debounce to diagnostics
 - Add goto declaration/definition
+- Fix a few partial-state parse tree diagnostic crashes
 
 ## 0.9.6
 

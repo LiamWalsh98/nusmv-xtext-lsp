@@ -82,6 +82,32 @@ test('accepts enum literals assigned to enum-typed variables', async () => {
     await result.dispose();
 });
 
+test('reports diagnostics instead of crashing on incomplete variable declarations', async () => {
+    const result = await validateNuSMV(`
+        MODULE main
+        VAR
+            unfinished :
+        DEFINE
+            stillAlive := TRUE;
+    `);
+
+    assert.ok(result.diagnostics.length > 0);
+    await result.dispose();
+});
+
+test('reports diagnostics instead of crashing on incomplete module declarations', async () => {
+    const result = await validateNuSMV(`
+        MODULE
+
+        MODULE main
+        VAR
+            flag : boolean;
+    `);
+
+    assert.ok(result.diagnostics.length > 0);
+    await result.dispose();
+});
+
 test('validates assignment sample models without false enum-literal diagnostics', async () => {
     for (const file of ['a4Parts3and4.smv', 'a4Part5.smv', 'a4Part1.smv']) {
         const text = await readFile(new URL(`../../../tests/${file}`, import.meta.url), 'utf-8');
