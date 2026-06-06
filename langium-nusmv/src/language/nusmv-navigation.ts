@@ -58,7 +58,7 @@ export class NuSMVDefinitionProvider extends DefaultDefinitionProvider {
 
         const moduleType = this.findSelfOrContainer(sourceAstNode, node => isAsyncProcessType(node) || isSyncProcessType(node));
         if (moduleType && this.isSourceForProperty(source, moduleType, 'module')) {
-            return moduleType.module.ref;
+            return moduleType.module?.ref;
         }
 
         const dotSegment = this.findSelfOrContainer(sourceAstNode, isDotSegment);

@@ -599,7 +599,7 @@ function resolveTypeMember(type: Type | undefined, member: string): NuSMVSymbol 
 
 function moduleFromType(type: Type | undefined): Module | undefined {
     if (isSyncProcessType(type) || isAsyncProcessType(type)) {
-        return type.module.ref;
+        return type.module?.ref;
     }
     return undefined;
 }

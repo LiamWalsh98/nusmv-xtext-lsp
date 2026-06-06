@@ -108,6 +108,17 @@ test('reports diagnostics instead of crashing on incomplete module declarations'
     await result.dispose();
 });
 
+test('reports diagnostics instead of crashing on incomplete process declarations', async () => {
+    const result = await validateNuSMV(`
+        MODULE main
+        VAR
+            proc : process
+    `);
+
+    assert.ok(result.diagnostics.length > 0);
+    await result.dispose();
+});
+
 test('validates assignment sample models without false enum-literal diagnostics', async () => {
     for (const file of ['a4Parts3and4.smv', 'a4Part5.smv', 'a4Part1.smv']) {
         const text = await readFile(new URL(`../../../tests/${file}`, import.meta.url), 'utf-8');
