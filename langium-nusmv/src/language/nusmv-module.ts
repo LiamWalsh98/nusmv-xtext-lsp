@@ -13,6 +13,8 @@ import {
 } from 'langium/lsp';
 import { NuSMVGeneratedModule, NuSMVGeneratedSharedModule } from './generated/module.js';
 import { NuSMVCompletionProvider } from './nusmv-completion.js';
+import { NuSMVDeclarationProvider, NuSMVDefinitionProvider } from './nusmv-navigation.js';
+import { NuSMVSemanticTokenProvider } from './nusmv-semantic-tokens.js';
 import { NuSMVScopeComputation, NuSMVScopeProvider } from './nusmv-scope.js';
 import { NuSMVValidator, registerValidationChecks } from './nusmv-validator.js';
 import { NuSMVWorkspaceManager } from './nusmv-workspace-manager.js';
@@ -20,6 +22,9 @@ import { NuSMVWorkspaceManager } from './nusmv-workspace-manager.js';
 export type NuSMVAddedServices = {
     lsp: {
         CompletionProvider: NuSMVCompletionProvider
+        DeclarationProvider: NuSMVDeclarationProvider
+        DefinitionProvider: NuSMVDefinitionProvider
+        SemanticTokenProvider: NuSMVSemanticTokenProvider
     }
     references: {
         ScopeComputation: NuSMVScopeComputation
@@ -34,7 +39,10 @@ export type NuSMVServices = LangiumServices & NuSMVAddedServices;
 
 export const NuSMVModule: Module<NuSMVServices, PartialLangiumServices & NuSMVAddedServices> = {
     lsp: {
-        CompletionProvider: services => new NuSMVCompletionProvider(services)
+        CompletionProvider: services => new NuSMVCompletionProvider(services),
+        DeclarationProvider: services => new NuSMVDeclarationProvider(services),
+        DefinitionProvider: services => new NuSMVDefinitionProvider(services),
+        SemanticTokenProvider: services => new NuSMVSemanticTokenProvider(services)
     },
     references: {
         ScopeComputation: services => new NuSMVScopeComputation(services),

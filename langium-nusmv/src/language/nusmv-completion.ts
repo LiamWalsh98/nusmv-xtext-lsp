@@ -12,7 +12,6 @@ import {
     CtlSpecification,
     DefineBody,
     DotSegment,
-    EnumType,
     EnumValue,
     FairnessExpression,
     FormalParameter,
@@ -38,6 +37,7 @@ import {
     isCtlSpecification,
     isDefineBody,
     isDotSegment,
+    isEnumType,
     isEnumValue,
     isFairnessExpression,
     isFormalParameter,
@@ -66,10 +66,15 @@ const BUILTIN_LITERAL_ITEMS = [
     createLiteralItem('self')
 ];
 
+const IDENTIFIER_TRIGGER_CHARACTERS = [
+    '_',
+    ...'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('')
+];
+
 export class NuSMVCompletionProvider extends DefaultCompletionProvider {
 
     override readonly completionOptions = {
-        triggerCharacters: ['.']
+        triggerCharacters: ['.', ...IDENTIFIER_TRIGGER_CHARACTERS]
     };
 
     constructor(services: NuSMVServices) {
@@ -202,7 +207,7 @@ export class NuSMVCompletionProvider extends DefaultCompletionProvider {
             return [];
         }
         const symbol = resolveSymbol(assignment.var);
-        return isVarBody(symbol) && symbol.type.$type === EnumType.$type
+        return isVarBody(symbol) && isEnumType(symbol.type)
             ? symbol.type.values
             : [];
     }

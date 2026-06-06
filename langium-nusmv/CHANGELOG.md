@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.9.8
+
+- Improve context-sensitive highlighting
+- Add debounce to diagnostics
+- Add goto declaration/definition
+- Fix a few partial-state parse tree diagnostic crashes
+
 ## 0.9.6
 
 - Fix context bleeding between files causing identically-name definitions to be overridden

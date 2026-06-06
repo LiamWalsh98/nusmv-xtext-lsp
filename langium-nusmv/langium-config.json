@@ -7,9 +7,6 @@
       "fileExtensions": [
         ".smv"
       ],
-      "textMate": {
-        "out": "syntaxes/nusmv.tmLanguage.json"
-      },
       "monarch": {
         "out": "syntaxes/nusmv.monarch.ts"
       }

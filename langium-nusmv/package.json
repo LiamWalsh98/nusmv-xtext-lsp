@@ -2,7 +2,7 @@
   "name": "vscode-nusmv",
   "displayName": "NuSMV VSCode Extension",
   "description": "NuSMV extension for VSCode powered by Langium",
-  "version": "0.9.6",
+  "version": "0.9.8",
   "publisher": "LiamWalsh98",
   "license": "EPL-1.0",
   "repository": {
@@ -17,13 +17,35 @@
   "categories": [
     "Programming Languages"
   ],
-  "activationEvents": [
-    "onLanguage:nusmv",
-    "onCommand:nusmv.createTerminal",
-    "onCommand:nusmv.runCurrent"
-  ],
   "main": "./out/extension/main.js",
   "contributes": {
+    "semanticTokenScopes": [
+      {
+        "language": "nusmv",
+        "scopes": {
+          "property": [
+            "variable.other.property.nusmv",
+            "variable.other.property"
+          ],
+          "property:declaration": [
+            "entity.name.variable.nusmv",
+            "entity.name.variable"
+          ],
+          "parameter": [
+            "variable.parameter.nusmv",
+            "variable.parameter"
+          ],
+          "function": [
+            "entity.name.function.nusmv",
+            "entity.name.function"
+          ],
+          "enumMember": [
+            "constant.other.enum.nusmv",
+            "constant.other.enum"
+          ]
+        }
+      }
+    ],
     "configuration": {
       "title": "NuSMV",
       "properties": {

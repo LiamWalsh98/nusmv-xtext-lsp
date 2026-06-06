@@ -11,6 +11,11 @@ test.after(async () => {
     await clearDocuments(shared);
 });
 
+test('triggers completion as soon as identifiers are typed', () => {
+    const triggerCharacters = NuSMV.lsp.CompletionProvider.completionOptions?.triggerCharacters ?? [];
+    assertSubset(triggerCharacters, ['.', '_', 'a', 'Z']);
+});
+
 test('completes local symbols and builtins in expressions', async () => {
     await expectNuSMVCompletion({
         text: `
