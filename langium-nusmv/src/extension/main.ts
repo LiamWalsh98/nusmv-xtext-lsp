@@ -98,6 +98,24 @@ export function activate(context: vscode.ExtensionContext): void {
                 }
                 return next(document);
             },
+            provideDocumentSemanticTokens: (document, token, next) => {
+                if (shouldBypassLanguageServerRequest(document)) {
+                    return emptySemanticTokens();
+                }
+                return next(document, token);
+            },
+            provideDocumentSemanticTokensEdits: (document, previousResultId, token, next) => {
+                if (shouldBypassLanguageServerRequest(document)) {
+                    return emptySemanticTokens();
+                }
+                return next(document, previousResultId, token);
+            },
+            provideDocumentRangeSemanticTokens: (document, range, token, next) => {
+                if (shouldBypassLanguageServerRequest(document)) {
+                    return emptySemanticTokens();
+                }
+                return next(document, range, token);
+            },
             handleDiagnostics: (uri, diagnostics, next) => {
                 const key = uri.toString();
                 clearPendingDiagnostics(uri);
@@ -439,6 +457,14 @@ function shouldSkipLanguageServer(document: vscode.TextDocument): boolean {
     const disableLargeFileChecks = configuration.get<boolean>('disableSemanticChecksOnLargeFiles', true);
     const maxLines = configuration.get<number>('semanticChecksMaxLines', DEFAULT_MAX_SEMANTIC_CHECK_LINES);
     return disableLargeFileChecks && document.lineCount > maxLines;
+}
+
+function shouldBypassLanguageServerRequest(document: vscode.TextDocument): boolean {
+    return skippedDocuments.has(document.uri.toString()) || shouldSkipLanguageServer(document);
+}
+
+function emptySemanticTokens(): vscode.SemanticTokens {
+    return new vscode.SemanticTokens(new Uint32Array());
 }
 
 function clearPendingDiagnostics(uri: vscode.Uri): void {
