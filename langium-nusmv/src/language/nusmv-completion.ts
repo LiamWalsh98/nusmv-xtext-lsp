@@ -90,6 +90,11 @@ export class NuSMVCompletionProvider extends DefaultCompletionProvider {
     }
 
     override async getCompletion(document, params: CompletionParams, cancelToken?: CancellationToken) {
+        const dotItems = this.getDotAccessCompletionItems(document, params);
+        if (dotItems) {
+            return CompletionList.create(this.deduplicateItems(dotItems), false);
+        }
+
         const completion = await super.getCompletion(document, params, cancelToken);
         const items = completion?.items ?? [];
         const additionalItems = this.getSmartCompletionItems(document, params);
@@ -140,6 +145,29 @@ export class NuSMVCompletionProvider extends DefaultCompletionProvider {
         return [...scopeItems, ...enumItems, ...BUILTIN_LITERAL_ITEMS];
     }
 
+    private getDotAccessCompletionItems(document, params: CompletionParams) {
+        const root = document.parseResult.value;
+        const cstRoot = root.$cstNode;
+        if (!cstRoot) {
+            return undefined;
+        }
+
+        const text = document.textDocument.getText();
+        const offset = document.textDocument.offsetAt(params.position);
+        const currentNode = this.findAstNodeNearOffset(cstRoot, text, offset, 1)
+            ?? this.findAstNodeNearOffset(cstRoot, text, offset, -1);
+        const previousNode = offset > 0 ? this.findAstNodeNearOffset(cstRoot, text, offset - 1, -1) : undefined;
+        const targetNode = currentNode ?? previousNode ?? root;
+        if (!this.isDotAccessCompletionContext(targetNode, previousNode, text, offset)) {
+            return undefined;
+        }
+
+        const dotContext = this.getDotAccessContext(targetNode, previousNode, text, offset);
+        return dotContext
+            ? collectVisibleModuleSymbols(dotContext).map(symbol => this.createSymbolCompletionItem(symbol))
+            : [];
+    }
+
     private findAstNodeNearOffset(cstRoot: AstNode['$cstNode'], text: string, startOffset: number, direction: -1 | 1): AstNode | undefined {
         if (text.length === 0) {
             return undefined;
@@ -175,6 +203,14 @@ export class NuSMVCompletionProvider extends DefaultCompletionProvider {
 
         const segmentIndex = path.segments.indexOf(segment);
         return segmentIndex >= 0 ? resolvePathTargetModule(path, segmentIndex) : undefined;
+    }
+
+    private isDotAccessCompletionContext(targetNode: AstNode, previousNode: AstNode | undefined, text: string, offset: number): boolean {
+        if (offset > 0 && text[offset - 1] === '.') {
+            return true;
+        }
+        return !!(this.findSelfOrContainer(targetNode, isDotSegment)
+            ?? (previousNode ? this.findSelfOrContainer(previousNode, isDotSegment) : undefined));
     }
 
     private isVariablePathHeadContext(targetNode: AstNode, text: string, offset: number): boolean {

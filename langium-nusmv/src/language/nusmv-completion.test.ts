@@ -45,17 +45,22 @@ test('completes members after dotted process access', async () => {
             DEFINE
                 alias := inner;
 
+            MODULE sibling
+            VAR
+                other : boolean;
+
             MODULE main
             VAR
                 proc : child(TRUE);
+                siblingProc : sibling;
+                outer : boolean;
             INIT proc.<|>
         `,
         index: 0,
         assert: completions => {
             const labels = completionLabels(completions.items);
             assertSubset(labels, ['arg', 'inner', 'alias']);
-            assert.ok(!labels.includes('proc'));
-            assert.ok(!labels.includes('TRUE'));
+            assertNotIncludes(labels, ['proc', 'siblingProc', 'outer', 'other', 'child', 'sibling', 'TRUE']);
         }
     });
 });
@@ -75,7 +80,7 @@ test('does not invent members for non-module paths', async () => {
         index: 0,
         assert: completions => {
             const labels = completionLabels(completions.items);
-            assert.ok(!labels.includes('inner'));
+            assert.equal(labels.length, 0, `Expected no completions for non-module dotted path. Got: ${labels.join(', ')}`);
         }
     });
 });
@@ -137,5 +142,11 @@ function completionLabels(items: { label: string | { label: string } }[]): strin
 function assertSubset(actual: string[], expected: string[]): void {
     for (const label of expected) {
         assert.ok(actual.includes(label), `Expected completion item '${label}' to be present. Got: ${actual.join(', ')}`);
+    }
+}
+
+function assertNotIncludes(actual: string[], unexpected: string[]): void {
+    for (const label of unexpected) {
+        assert.ok(!actual.includes(label), `Expected completion item '${label}' to be absent. Got: ${actual.join(', ')}`);
     }
 }

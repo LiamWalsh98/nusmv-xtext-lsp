@@ -30,8 +30,8 @@ test('goes to define definitions', async () => {
             VAR
                 flag : boolean;
             DEFINE
-                <|locked|> := flag;
-            INIT loc<|>ked
+                <|nFlag|> := flag;
+            INIT nFl<|>ag
         `
     });
 });
@@ -82,18 +82,18 @@ test('goes to contextual enum literal definitions', async () => {
     });
 });
 
-test('goes to reusable-barrier enum literal definitions', async () => {
+test('goes to reusable enum literal definitions', async () => {
     await expectDefinition({
         text: `
             MODULE proc
             VAR
-                pc : {w1, <|b1c1|>, b1r5, b2c1, b2r5};
+                pc : {n1, <|n2|>, n3, n4, n5};
 
             MODULE main
             VAR
                 p1 : process proc;
             DEFINE
-                inBarrier := p1.pc = b1<|>c1;
+                n6 := p1.pc = n<|>2;
         `
     });
 
@@ -103,13 +103,13 @@ test('goes to reusable-barrier enum literal definitions', async () => {
         text: `
             MODULE proc
             VAR
-                pc : {w1, b1c1, b1r5, b2c1, <|b2r5|>};
+                pc : {n1, n2, n3, n4, <|n5|>};
 
             MODULE main
             VAR
                 p1 : process proc;
             DEFINE
-                inBarrier := p1.pc = b2<|>r5;
+                n6 := p1.pc = n<|>5;
         `
     });
 });

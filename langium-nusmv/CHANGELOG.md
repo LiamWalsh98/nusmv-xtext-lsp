@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.10.0
+
+- Replace `NuSMV: Run Current Model` terminal injection with a captured, cancellable runner
+- Add `nusmv.executablePath`, `nusmv.defaultRunArgs`, and `nusmv.revealRunOutput`
+- Add spec true/false result summaries, run status feedback, and a terminal fallback command
+
 ## 0.9.8
 
 - Improve context-sensitive highlighting
