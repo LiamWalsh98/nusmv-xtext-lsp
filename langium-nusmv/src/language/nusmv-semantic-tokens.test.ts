@@ -14,28 +14,28 @@ test.afterEach(async () => {
 
 test('highlights references for variables, defines, enum members, parameters, and temporal operators', async () => {
     const { tokens } = await highlightNuSMV(`
-        MODULE proc(id, lock, N)
+        MODULE n0001(n0002, n0003, N0004)
         VAR
-            pc : {w1, b1c1};
+            n0005 : {n0006, n0007};
         DEFINE
-            iHoldLock := lock = id;
-            locked := lock > 0 & !iHoldLock;
-        SPEC AG (pc = w1 -> AF (pc = b1c1));
+            n0008 := n0003 = n0002;
+            n0009 := n0003 > 0 & !n0008;
+        SPEC AG (n0005 = n0006 -> AF (n0005 = n0007));
 
         MODULE main
         VAR
-            lock : 0..1;
-            N : 0..1;
-            p1 : process proc(1, lock, N);
-        SPEC EF p1.locked;
+            n0003 : 0..1;
+            N0004 : 0..1;
+            n0010 : process n0001(1, n0003, N0004);
+        SPEC EF n0010.n0009;
     `);
 
-    assertTokenCount(tokens, 'iHoldLock', SemanticTokenTypes.function, 1);
-    assertTokenCount(tokens, 'locked', SemanticTokenTypes.function, 1);
-    assertTokenCount(tokens, 'w1', SemanticTokenTypes.enumMember, 1);
-    assertTokenCount(tokens, 'b1c1', SemanticTokenTypes.enumMember, 1);
-    assertTokenCount(tokens, 'id', SemanticTokenTypes.parameter, 2);
-    assertTokenCount(tokens, 'N', SemanticTokenTypes.property, 1);
+    assertTokenCount(tokens, 'n0008', SemanticTokenTypes.function, 1);
+    assertTokenCount(tokens, 'n0009', SemanticTokenTypes.function, 1);
+    assertTokenCount(tokens, 'n0006', SemanticTokenTypes.enumMember, 1);
+    assertTokenCount(tokens, 'n0007', SemanticTokenTypes.enumMember, 1);
+    assertTokenCount(tokens, 'n0002', SemanticTokenTypes.parameter, 2);
+    assertTokenCount(tokens, 'N0004', SemanticTokenTypes.property, 1);
     assertHasToken(tokens, 'AG', SemanticTokenTypes.keyword);
     assertHasToken(tokens, 'AF', SemanticTokenTypes.keyword);
     assertHasToken(tokens, 'EF', SemanticTokenTypes.keyword);

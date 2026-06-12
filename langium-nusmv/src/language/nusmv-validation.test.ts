@@ -31,20 +31,20 @@ test('accepts enum literals from process-typed paths in comparisons', async () =
     await result.dispose();
 });
 
-test('accepts reusable-barrier enum literals from process-typed paths in comparisons', async () => {
+test('accepts reusable enum literals from process-typed paths in comparisons', async () => {
     const result = await validateNuSMV(`
         MODULE proc
         VAR
-            pc : {w1, w2, b1c1, b1c2, b1c3, b1c4, b1c5, b1r1, b1r2, b1r3, b1r4, b1r5,
-                  b2c1, b2c2, b2c3, b2c4, b2c5, b2r1, b2r2, b2r3, b2r4, b2r5};
+            pc : {n1, n2, n3, n4, n5, n6, n7, n8, n9, n10, n11, n12,
+                  n13, n14, n15, n16, n17, n18, n19, n20, n21, n22};
 
         MODULE main
         VAR
             p1 : process proc;
             p2 : process proc;
         DEFINE
-            p1InB1 := (p1.pc = b1c1 | p1.pc = b1r5);
-            p2InB2 := (p2.pc = b2c1 | p2.pc = b2r5);
+            n23 := (p1.pc = n3 | p1.pc = n12);
+            n24 := (p2.pc = n13 | p2.pc = n22);
     `);
 
     assertNoDiagnostics(result.diagnostics);
@@ -119,8 +119,8 @@ test('reports diagnostics instead of crashing on incomplete process declarations
     await result.dispose();
 });
 
-test('validates assignment sample models without false enum-literal diagnostics', async () => {
-    for (const file of ['a4Parts3and4.smv', 'a4Part5.smv', 'a4Part1.smv']) {
+test('validates sample models without false enum-literal diagnostics', async () => {
+    for (const file of ['model-orion.smv', 'model-river.smv', 'model-cobalt.smv']) {
         const text = await readFile(new URL(`../../../tests/${file}`, import.meta.url), 'utf-8');
         const result = await validateNuSMV(text);
         assertNoDiagnostics(result.diagnostics, file);
@@ -129,8 +129,8 @@ test('validates assignment sample models without false enum-literal diagnostics'
 });
 
 test('keeps same-named modules isolated between open documents', async () => {
-    await assertCleanWhenOpenedAfter('a4Part5.smv', 'a4Parts3and4.smv');
-    await assertCleanWhenOpenedAfter('a4Parts3and4.smv', 'a4Part5.smv');
+    await assertCleanWhenOpenedAfter('model-river.smv', 'model-orion.smv');
+    await assertCleanWhenOpenedAfter('model-orion.smv', 'model-river.smv');
 });
 
 async function assertCleanWhenOpenedAfter(firstFile: string, secondFile: string): Promise<void> {

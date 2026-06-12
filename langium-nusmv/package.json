@@ -2,7 +2,7 @@
   "name": "vscode-nusmv",
   "displayName": "NuSMV VSCode Extension",
   "description": "NuSMV extension for VSCode powered by Langium",
-  "version": "0.9.8",
+  "version": "0.10.0",
   "publisher": "LiamWalsh98",
   "license": "EPL-1.0",
   "repository": {
@@ -59,6 +59,29 @@
           "default": 10000,
           "minimum": 1,
           "description": "Maximum line count for NuSMV language-server semantic checks when large-file semantic checks are disabled."
+        },
+        "nusmv.executablePath": {
+          "type": "string",
+          "default": "",
+          "description": "Path to the NuSMV executable. Leave empty to use 'nusmv' on PATH, or 'nusmv.exe' on Windows."
+        },
+        "nusmv.defaultRunArgs": {
+          "type": "array",
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "description": "Default command-line arguments to pass to NuSMV before the model file, for example ['-dcx']."
+        },
+        "nusmv.revealRunOutput": {
+          "type": "string",
+          "enum": [
+            "always",
+            "onFailure",
+            "never"
+          ],
+          "default": "always",
+          "description": "When to reveal the NuSMV Run output channel after running a model."
         }
       }
     },
@@ -86,6 +109,10 @@
         {
           "command": "nusmv.runCurrent",
           "when": "editorLangId == nusmv"
+        },
+        {
+          "command": "nusmv.runCurrentInTerminal",
+          "when": "editorLangId == nusmv"
         }
       ]
     },
@@ -97,6 +124,10 @@
       {
         "command": "nusmv.runCurrent",
         "title": "NuSMV: Run Current Model"
+      },
+      {
+        "command": "nusmv.runCurrentInTerminal",
+        "title": "NuSMV: Run Current Model in Terminal"
       }
     ],
     "keybindings": [
