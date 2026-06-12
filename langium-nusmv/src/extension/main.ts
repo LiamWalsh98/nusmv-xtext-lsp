@@ -31,6 +31,7 @@ const DIAGNOSTIC_DEBOUNCE_MS = 600;
 const DEFAULT_MAX_SEMANTIC_CHECK_LINES = 10_000;
 const skippedDocuments = new Set<string>();
 const diagnosticTimers = new Map<string, ReturnType<typeof setTimeout>>();
+const diagnosticVersions = new Map<string, number>();
 
 interface SpawnedNuSMVResult {
     stdout: string
@@ -92,11 +93,52 @@ export function activate(context: vscode.ExtensionContext): void {
             },
             didClose: async (document, next) => {
                 outputChannel?.appendLine(`didClose for ${document.uri.toString()}`);
-                clearPendingDiagnostics(document.uri);
                 if (skippedDocuments.delete(document.uri.toString())) {
                     return;
                 }
                 return next(document);
+            },
+            provideCompletionItem: (document, position, context, token, next) => {
+                if (shouldBypassLanguageServerRequest(document)) {
+                    return [];
+                }
+                return next(document, position, context, token);
+            },
+            provideDefinition: (document, position, token, next) => {
+                if (shouldBypassLanguageServerRequest(document)) {
+                    return null;
+                }
+                return next(document, position, token);
+            },
+            provideDeclaration: (document, position, token, next) => {
+                if (shouldBypassLanguageServerRequest(document)) {
+                    return null;
+                }
+                return next(document, position, token);
+            },
+            provideReferences: (document, position, options, token, next) => {
+                if (shouldBypassLanguageServerRequest(document)) {
+                    return [];
+                }
+                return next(document, position, options, token);
+            },
+            provideDocumentHighlights: (document, position, token, next) => {
+                if (shouldBypassLanguageServerRequest(document)) {
+                    return [];
+                }
+                return next(document, position, token);
+            },
+            provideHover: (document, position, token, next) => {
+                if (shouldBypassLanguageServerRequest(document)) {
+                    return null;
+                }
+                return next(document, position, token);
+            },
+            provideDocumentSymbols: (document, token, next) => {
+                if (shouldBypassLanguageServerRequest(document)) {
+                    return [];
+                }
+                return next(document, token);
             },
             provideDocumentSemanticTokens: (document, token, next) => {
                 if (shouldBypassLanguageServerRequest(document)) {
@@ -118,6 +160,8 @@ export function activate(context: vscode.ExtensionContext): void {
             },
             handleDiagnostics: (uri, diagnostics, next) => {
                 const key = uri.toString();
+                const version = (diagnosticVersions.get(key) ?? 0) + 1;
+                diagnosticVersions.set(key, version);
                 clearPendingDiagnostics(uri);
 
                 if (diagnostics.length === 0) {
@@ -127,7 +171,9 @@ export function activate(context: vscode.ExtensionContext): void {
 
                 const timeout = setTimeout(() => {
                     diagnosticTimers.delete(key);
-                    next(uri, diagnostics);
+                    if (diagnosticVersions.get(key) === version) {
+                        next(uri, diagnostics);
+                    }
                 }, DIAGNOSTIC_DEBOUNCE_MS);
                 diagnosticTimers.set(key, timeout);
             }
@@ -481,4 +527,5 @@ function clearAllPendingDiagnostics(): void {
         clearTimeout(timeout);
     }
     diagnosticTimers.clear();
+    diagnosticVersions.clear();
 }
